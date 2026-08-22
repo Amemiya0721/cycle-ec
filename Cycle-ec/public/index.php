@@ -1,6 +1,21 @@
 <?php
 $title = "サンプルページ";
 ?>
+<?php
+$config = require __DIR__ . '/../config/config.php';
+
+try {
+    $pdo = new PDO(
+        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
+        $config['user'],
+        $config['pass']
+    );
+
+    echo "DB接続成功！";
+} catch (PDOException $e) {
+    echo "DB接続失敗: " . $e->getMessage();
+}
+?>
 <!DOCTYPE html>
 <html lang="ja">
 <head>
