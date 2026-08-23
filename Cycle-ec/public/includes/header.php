@@ -12,8 +12,14 @@
         rel="stylesheet"
     >
 
-    <!-- 自作CSS -->
-   <!-- <link rel="stylesheet" href=""> -->
+    <!-- 自作CSS 
+    相対パスが好ましいが、呼び出し元によって絶対パスのほうが好ましい 
+    
+    -->
+    <link rel="stylesheet" href="/assets/css/style.css"> 
+    <link rel="stylesheet" href="/assets/css/index.css"> 
+
+
 </head>
 
 <body>
