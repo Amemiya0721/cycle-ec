@@ -1,29 +1,15 @@
-<?php
-$title = "サンプルページ";
-?>
-<?php
-$config = require __DIR__ . '/../config/config.php';
+<?php require_once __DIR__ . '/includes/header.php'; ?>
 
-try {
-    $pdo = new PDO(
-        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8",
-        $config['user'],
-        $config['pass']
-    );
+<?php require_once __DIR__ . '/includes/nav.php'; ?>
 
-    echo "DB接続成功！";
-} catch (PDOException $e) {
-    echo "DB接続失敗: " . $e->getMessage();
-}
-?>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title><?php echo $title; ?></title>
-</head>
-<body>
-    <h1><?php echo $title; ?></h1>
-    <p>現在時刻：<?php echo date("Y-m-d H:i:s"); ?></p>
-</body>
-</html>
+<main class="container py-4">
+
+    <h1>商品一覧</h1>
+
+    <button class="btn btn-primary">
+        商品を探す
+    </button>
+
+</main>
+
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
