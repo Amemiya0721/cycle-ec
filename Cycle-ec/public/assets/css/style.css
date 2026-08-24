@@ -1,0 +1,58 @@
+
+/*
+headerのスタイル
+*/
+.user-nav {
+  font-size: 0.85rem;
+}
+
+.user-nav a,
+.mobile-user-nav a,
+.mobile-category-nav a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.user-nav a:hover,
+.mobile-user-nav a:hover,
+.mobile-category-nav a:hover {
+  opacity: 0.65;
+}
+
+.cart-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 18px;
+  height: 18px;
+
+  padding: 0 5px;
+
+  border-radius: 50%;
+
+  font-size: 11px;
+
+  background: #111;
+  color: #fff;
+}
+
+/* モバイルメニュー */
+.mobile-user-nav li,
+.mobile-category-nav li {
+  border-bottom: 1px solid #eee;
+}
+
+.mobile-user-nav a,
+.mobile-category-nav a {
+  display: block;
+  padding: 14px 4px;
+}
+
+.mobile-user-nav {
+  font-weight: 600;
+}
+
+.mobile-category-nav {
+  font-size: 0.95rem;
+}

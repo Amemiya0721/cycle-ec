@@ -1,0 +1,120 @@
+/* ==========================================================
+   products.css
+   -----------------------------------------------------------
+   既存 style.css（navy/redテーマ）のトークンをそのまま利用し、
+   商品一覧ページ専用のコンポーネント（検索フォーム／件数表示／
+   ページネーション）のみをここに追加する。
+   ========================================================== */
+
+.products-section {
+  padding: 40px 0 80px;
+}
+
+/* ---------- 検索フォーム ---------- */
+.search-form-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  background: var(--off);
+  border: 1px solid var(--line);
+  padding: 20px;
+  margin-bottom: 32px;
+}
+
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.search-field label {
+  color: var(--sub);
+  letter-spacing: 0.03em;
+}
+.search-field select,
+.search-field input {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 9px 10px;
+  font-size: 13.5px;
+  background: #fff;
+  color: var(--ink);
+  min-width: 160px;
+}
+.search-field--keyword { flex: 1 1 240px; }
+.search-field--keyword input { width: 100%; }
+
+.search-submit {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+/* ---------- 検索結果件数 ---------- */
+.result-count {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--sub);
+}
+
+.no-result {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--sub);
+  font-size: 14px;
+  border: 1px dashed var(--line);
+}
+
+/* ---------- 商品グリッド行間調整 ---------- */
+.prod-grid {
+  --bs-gutter-x: 20px;
+  --bs-gutter-y: 20px;
+  margin-top: 8px;
+}
+.prod-grid > [class^="col-"] {
+  margin-bottom: 4px;
+}
+
+/* ---------- ページネーション ---------- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 40px;
+}
+.page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink);
+}
+.page-link:hover {
+  border-color: var(--ink);
+}
+.page-link.is-current {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+@media (max-width: 576px) {
+  .search-form-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .search-field select,
+  .search-field input {
+    min-width: 0;
+    width: 100%;
+  }
+  .search-submit {
+    width: 100%;
+    text-align: center;
+  }
+}

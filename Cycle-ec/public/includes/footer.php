@@ -45,14 +45,6 @@
                         <li><a href="#">サイトマップ</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-3">
-                    <h5 class="text-white" style="font-size:13px;margin-bottom:12px;">メールマガジン</h5>
-                    <p class="news-desc">新着商品やお得な情報をお届けします</p>
-                    <form class="news-input-row d-flex" id="newsletter-form">
-                        <input type="email" class="form-control" placeholder="メールアドレスを入力" required>
-                        <button type="submit" class="btn btn-light">登録する</button>
-                    </form>
-                </div>
             </div>
             <div class="footer-bottom">© OVERHAUL All Rights Reserved.</div>
         </div>

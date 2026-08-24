@@ -41,10 +41,9 @@
   </div>
   <div class="container h-100 d-flex align-items-center">
     <div class="hero-inner">
-      <h1>中古ロードバイク・パーツを<br>もっと身近に。</h1>
+      <h1>ここにタイトル<br>ここにサブタイトル</h1>
       <p>OVERHAULは、使えるものを必要な人へつなぐ<br>中古ロードバイク・自転車パーツ専門店です。</p>
       <div class="d-flex gap-3 hero-cta">
-        <a href="#new-products" class="btn btn-light btn-hero">商品一覧を見る</a>
         <a href="#" class="btn btn-outline-light btn-hero" data-cat="junk">ジャンク倉庫を見る</a>
       </div>
     </div>
@@ -168,3 +167,4 @@
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
 
 <script src="/assets/js/Samplescript.js"></script>
+<script src="/assets/js/fuwatto-animation.js"></script>
