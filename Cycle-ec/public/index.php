@@ -16,11 +16,11 @@ require_once __DIR__ . '/includes/nav.php';
     <div class="hero-bike" aria-hidden="true">
         <svg viewBox="0 0 640 440" width="100%" height="100%">
             <g fill="none" stroke="#e8b923" stroke-width="5" opacity="0.55">
-                <circle cx="150" cy="330" r="95"/>
-                <circle cx="470" cy="330" r="95"/>
-                <path d="M150 330 L300 150 L470 330 L300 330 L220 200 L390 200"/>
-                <path d="M300 150 L340 150"/>
-                <path d="M150 330 L60 330"/>
+                <circle cx="150" cy="330" r="95" />
+                <circle cx="470" cy="330" r="95" />
+                <path d="M150 330 L300 150 L470 330 L300 330 L220 200 L390 200" />
+                <path d="M300 150 L340 150" />
+                <path d="M150 330 L60 330" />
             </g>
         </svg>
     </div>
@@ -41,8 +41,7 @@ require_once __DIR__ . '/includes/nav.php';
             <div class="d-flex gap-3 hero-cta">
                 <a
                     href="<?= $baseUrl ?>pages/products.php?category=junk"
-                    class="btn btn-outline-light btn-hero"
-                >
+                    class="btn btn-outline-light btn-hero">
                     ジャンク倉庫を見る
                 </a>
             </div>
@@ -66,14 +65,248 @@ require_once __DIR__ . '/includes/nav.php';
         <a
             href="<?= $baseUrl ?>pages/news.php"
             class="more-link"
-            id="news-more"
-        >
+            id="news-more">
             一覧を見る &gt;
         </a>
 
     </div>
 </div>
 
+<!-- RECOMMEND -->
+<section id="recommend">
+
+    <div class="container">
+
+        <div class="section-head d-flex align-items-baseline justify-content-between">
+
+            <div>
+                <span class="section-label">OVERHAUL PICKS</span>
+                <h2>おすすめ商品</h2>
+            </div>
+
+            <a
+                href="<?= $baseUrl ?>pages/products.php"
+                class="more-link"
+            >
+                一覧を見る &gt;
+            </a>
+        </div>
+
+
+        <!-- SWIPER -->
+        <div class="swiper recommend-swiper">
+
+            <div class="swiper-wrapper">
+
+                <!-- CARD 1 -->
+                <div class="swiper-slide">
+
+                    <a href="#" class="product-card">
+
+                        <div class="product-image">
+
+                            <span class="product-badge">
+                                PICK UP
+                            </span>
+
+                            <img
+                                src="<?= $baseUrl ?>uploads/products/sample1.jpg"
+                                alt="Cannondale CAAD13"
+                            >
+
+                        </div>
+
+                        <div class="product-info">
+
+                            <div class="product-category">
+                                ROAD BIKE
+                            </div>
+
+                            <h3 class="product-name">
+                                Cannondale CAAD13 Disc 105
+                            </h3>
+
+                            <div class="product-price">
+                                ¥120,000
+                            </div>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+
+                <!-- CARD 2 -->
+                <div class="swiper-slide">
+
+                    <a href="#" class="product-card">
+
+                        <div class="product-image">
+
+                            <span class="product-badge">
+                                PICK UP
+                            </span>
+
+                            <img
+                                src="<?= $baseUrl ?>uploads/products/sample2.jpg"
+                                alt="Shimano Ultegra R8000"
+                            >
+
+                        </div>
+
+                        <div class="product-info">
+
+                            <div class="product-category">
+                                COMPONENT
+                            </div>
+
+                            <h3 class="product-name">
+                                Shimano ULTEGRA R8000 Groupset
+                            </h3>
+
+                            <div class="product-price">
+                                ¥35,000
+                            </div>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+
+                <!-- CARD 3 -->
+                <div class="swiper-slide">
+
+                    <a href="#" class="product-card">
+
+                        <div class="product-image">
+
+                            <span class="product-badge">
+                                PICK UP
+                            </span>
+
+                            <img
+                                src="<?= $baseUrl ?>uploads/products/sample3.jpg"
+                                alt="Carbon Wheel"
+                            >
+
+                        </div>
+
+                        <div class="product-info">
+
+                            <div class="product-category">
+                                WHEEL
+                            </div>
+
+                            <h3 class="product-name">
+                                Carbon Aero Wheel 50mm
+                            </h3>
+
+                            <div class="product-price">
+                                ¥48,000
+                            </div>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+
+                <!-- CARD 4 -->
+                <div class="swiper-slide">
+
+                    <a href="#" class="product-card">
+
+                        <div class="product-image">
+
+                            <span class="product-badge">
+                                PICK UP
+                            </span>
+
+                            <img
+                                src="<?= $baseUrl ?>uploads/products/sample4.jpg"
+                                alt="Selle Italia Saddle"
+                            >
+
+                        </div>
+
+                        <div class="product-info">
+
+                            <div class="product-category">
+                                PARTS
+                            </div>
+
+                            <h3 class="product-name">
+                                Selle Italia Carbon Saddle
+                            </h3>
+
+                            <div class="product-price">
+                                ¥12,000
+                            </div>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+
+                <!-- CARD 5 -->
+                <div class="swiper-slide">
+
+                    <a href="#" class="product-card">
+
+                        <div class="product-image">
+
+                            <span class="product-badge">
+                                PICK UP
+                            </span>
+
+                            <img
+                                src="<?= $baseUrl ?>uploads/products/sample5.jpg"
+                                alt="Shimano Dura Ace"
+                            >
+
+                        </div>
+
+                        <div class="product-info">
+
+                            <div class="product-category">
+                                COMPONENT
+                            </div>
+
+                            <h3 class="product-name">
+                                Shimano DURA-ACE R9100
+                            </h3>
+
+                            <div class="product-price">
+                                ¥42,000
+                            </div>
+
+                        </div>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+
+            <!-- NAVIGATION -->
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+
+            <!-- PAGINATION -->
+            <div class="swiper-pagination"></div>
+
+        </div>
+
+    </div>
+
+</section>
 
 <!-- CATEGORY -->
 <section id="category">
@@ -85,13 +318,11 @@ require_once __DIR__ . '/includes/nav.php';
 
         <div
             class="row g-3"
-            id="cat-grid"
-        ></div>
+            id="cat-grid"></div>
 
         <div class="cat-more">
             <a
-                href="<?= $baseUrl ?>pages/products.php"
-            >
+                href="<?= $baseUrl ?>pages/products.php">
                 すべてのカテゴリを見る &gt;
             </a>
         </div>
@@ -110,8 +341,7 @@ require_once __DIR__ . '/includes/nav.php';
 
             <a
                 href="<?= $baseUrl ?>pages/products.php?sort=new"
-                class="more-link"
-            >
+                class="more-link">
                 一覧を見る &gt;
             </a>
 
@@ -119,8 +349,7 @@ require_once __DIR__ . '/includes/nav.php';
 
         <div
             class="row g-3"
-            id="new-grid"
-        ></div>
+            id="new-grid"></div>
 
     </div>
 </section>
@@ -136,8 +365,7 @@ require_once __DIR__ . '/includes/nav.php';
 
             <a
                 href="<?= $baseUrl ?>pages/products.php?sort=price_down"
-                class="more-link"
-            >
+                class="more-link">
                 一覧を見る &gt;
             </a>
 
@@ -145,8 +373,7 @@ require_once __DIR__ . '/includes/nav.php';
 
         <div
             class="row g-3"
-            id="down-grid"
-        ></div>
+            id="down-grid"></div>
 
     </div>
 </section>
@@ -162,8 +389,7 @@ require_once __DIR__ . '/includes/nav.php';
 
         <div
             class="row g-4 g-lg-0"
-            id="cond-grid"
-        >
+            id="cond-grid">
 
             <div class="col-6 col-lg cond-item">
                 <div class="cond-rank">Sランク</div>
@@ -237,8 +463,7 @@ require_once __DIR__ . '/includes/nav.php';
 
                 <a
                     href="<?= $baseUrl ?>pages/about.php"
-                    class="detail-link"
-                >
+                    class="detail-link">
                     詳しく見る &gt;
                 </a>
 
@@ -293,6 +518,9 @@ require_once __DIR__ . '/includes/nav.php';
 </section>
 
 
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script src="<?= $baseUrl ?>assets/js/index.js"></script>
 <script src="<?= $baseUrl ?>assets/js/Samplescript.js"></script>
 <script src="<?= $baseUrl ?>assets/js/fuwatto-animation.js"></script>
 

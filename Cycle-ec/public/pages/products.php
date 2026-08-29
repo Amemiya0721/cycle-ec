@@ -518,6 +518,5 @@ require_once __DIR__ . '/../includes/nav.php';
 
 
 <script src="/assets/js/products.js"></script>
-<script src="/assets/js/fuwatto-animation.js"></script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
