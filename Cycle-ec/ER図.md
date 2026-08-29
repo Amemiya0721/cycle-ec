@@ -51,7 +51,7 @@ erDiagram
         decimal price
         decimal tax_rate
         varchar status
-        varchar condition
+        varchar product_condition
         boolean is_deleted
         datetime created_at
         datetime updated_at

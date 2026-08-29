@@ -1,10 +1,18 @@
+<?php
+
+$config = require __DIR__ . '/../../config/config.php';
+
+$baseUrl = $config['app']['base_url'];
+
+?>
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>OVERHAUL Navber</title>
+    <title>OVERHAUL</title>
 
     <!-- Bootstrap CSS -->
     <link
@@ -12,13 +20,19 @@
         rel="stylesheet"
     >
 
-    <!-- 自作CSS 
-    相対パスが好ましいが、呼び出し元によって絶対パスのほうが好ましい 
-    
-    -->
-    <link rel="stylesheet" href="/assets/css/style.css"> 
-    <link rel="stylesheet" href="/assets/css/index.css"> 
+    <!-- 共通CSS -->
+    <link
+        rel="stylesheet"
+        href="<?= $baseUrl ?>assets/css/style.css"
+    >
 
+    <?php if (!empty($pageCss)): ?>
+        <!-- ページ固有CSS -->
+        <link
+            rel="stylesheet"
+            href="<?= $baseUrl ?>assets/css/<?= htmlspecialchars($pageCss, ENT_QUOTES, 'UTF-8') ?>"
+        >
+    <?php endif; ?>
 
 </head>
 

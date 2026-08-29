@@ -9,7 +9,18 @@
 .products-section {
   padding: 40px 0 80px;
 }
+.prod-thumb {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+}
 
+.prod-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
 /* ---------- 検索フォーム ---------- */
 .search-form-panel {
   display: flex;
