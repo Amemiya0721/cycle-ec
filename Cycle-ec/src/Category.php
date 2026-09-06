@@ -74,6 +74,7 @@ class Category
         return (int) $pdo->lastInsertId();
     }
 
+<<<<<<< HEAD
     public static function findById(int $categoryId): ?array
     {
         $pdo = Database::getConnection();
@@ -114,6 +115,8 @@ class Category
         return $stmt->rowCount() > 0;
     }
 
+=======
+>>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
     /** @return array<string, string> slug => カテゴリ名 */
     private static function slugMap(): array
     {

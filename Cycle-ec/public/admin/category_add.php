@@ -4,7 +4,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../src/Database.php';
 require_once __DIR__ . '/../../src/Category.php';
 
+<<<<<<< HEAD
 const MAX_CATEGORY_NAME_LENGTH = 100;
+=======
+const MAX_CATEGORY_NAME_LENGTH = 255;
+>>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
 const MAX_CATEGORY_IMAGE_SIZE = 5 * 1024 * 1024;
 
 $errors = [];
@@ -21,7 +25,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($name === '') {
         $errors[] = 'カテゴリ名を入力してください。';
     } elseif (mb_strlen($name) > MAX_CATEGORY_NAME_LENGTH) {
+<<<<<<< HEAD
         $errors[] = 'カテゴリ名は100文字以内で入力してください。';
+=======
+        $errors[] = 'カテゴリ名は255文字以内で入力してください。';
+>>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
     }
 
     $file = $_FILES['icon'] ?? null;
@@ -136,7 +144,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="post" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="name" class="form-label">カテゴリ名 <span class="text-danger">*</span></label>
+<<<<<<< HEAD
                     <input type="text" class="form-control" id="name" name="name" maxlength="100" value="<?= h($name) ?>" required>
+=======
+                    <input type="text" class="form-control" id="name" name="name" maxlength="255" value="<?= h($name) ?>" required>
+>>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
                 </div>
                 <div class="mb-4">
                     <label for="icon" class="form-label">カテゴリ画像</label>

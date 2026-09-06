@@ -5,12 +5,16 @@ $config = require __DIR__ . '/../config/config.php';
 $baseUrl = $config['app']['base_url'];
 
 require_once __DIR__ . '/../src/Category.php';
+<<<<<<< HEAD
 $categories = [];
 try {
     $categories = Category::all();
 } catch (Throwable $e) {
     error_log('Top page category loading failed: ' . $e->getMessage());
 }
+=======
+$categories = Category::all();
+>>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
 
 $pageCss = 'index.css';
 

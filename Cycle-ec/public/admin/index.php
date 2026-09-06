@@ -13,7 +13,11 @@ declare(strict_types=1);
 <nav class="navbar navbar-dark bg-dark"><div class="container"><span class="navbar-brand">OVERHAUL 管理画面</span><a class="btn btn-outline-light btn-sm" href="../index.php">サイトを見る</a></div></nav>
 <main class="container py-5"><h1 class="h3 mb-4">管理メニュー</h1><div class="row g-3">
 	<div class="col-md-4"><a class="card card-body text-decoration-none h-100" href="products/index.php"><h2 class="h5">商品管理</h2><p class="text-muted mb-0">商品の一覧・登録・編集</p></a></div>
+<<<<<<< HEAD
 	<div class="col-md-4"><a class="card card-body text-decoration-none h-100" href="categories.php"><h2 class="h5">カテゴリ管理</h2><p class="text-muted mb-0">カテゴリの一覧・追加・編集・削除</p></a></div>
+=======
+	<div class="col-md-4"><a class="card card-body text-decoration-none h-100" href="category_add.php"><h2 class="h5">カテゴリ追加</h2><p class="text-muted mb-0">カテゴリ名・画像の登録</p></a></div>
+>>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
 	<div class="col-md-4"><a class="card card-body text-decoration-none h-100" href="orders.php"><h2 class="h5">注文管理</h2><p class="text-muted mb-0">注文内容・ステータスの確認</p></a></div>
 </div></main>
 </body>
