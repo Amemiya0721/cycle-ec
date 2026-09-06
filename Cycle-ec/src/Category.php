@@ -8,7 +8,7 @@ require_once __DIR__ . '/Database.php';
  * -----------------------------------------------------------
  * カテゴリの検索・解決処理を集約する。
  *
- * 現行ER図の CATEGORIES は (category_id, name) のみを持ち、
+ * 現行ER図の CATEGORIES は category_id, name, icon_url を持ち、
  * URL用のslugカラムは存在しない。
  * そのため、URLパラメータ category（例: "road-bike"）を
  * category_id へ解決する処理をこのクラスに閉じ込め、
@@ -50,13 +50,68 @@ class Category
     /**
      * カテゴリ一覧を取得する（検索フォームのプルダウン等に使用）。
      *
-     * @return array<int, array{category_id:int, name:string}>
+     * @return array<int, array{category_id:int, name:string, icon_url:?string}>
      */
     public static function all(): array
     {
         $pdo = Database::getConnection();
-        $stmt = $pdo->query('SELECT category_id, name FROM CATEGORIES ORDER BY category_id ASC');
+        $stmt = $pdo->query('SELECT category_id, name, icon_url FROM CATEGORIES ORDER BY category_id ASC');
         return $stmt->fetchAll();
+    }
+
+    public static function create(string $name, ?string $iconUrl = null, ?PDO $pdo = null): int
+    {
+        $pdo ??= Database::getConnection();
+        $stmt = $pdo->prepare(
+            'INSERT INTO categories (name, icon_url)
+             VALUES (:name, :icon_url)'
+        );
+        $stmt->execute([
+            ':name' => $name,
+            ':icon_url' => $iconUrl,
+        ]);
+
+        return (int) $pdo->lastInsertId();
+    }
+
+    public static function findById(int $categoryId): ?array
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare(
+            'SELECT category_id, name, icon_url
+             FROM categories
+             WHERE category_id = :category_id
+             LIMIT 1'
+        );
+        $stmt->execute([':category_id' => $categoryId]);
+        $category = $stmt->fetch();
+
+        return $category ?: null;
+    }
+
+    public static function update(int $categoryId, string $name, ?string $iconUrl, ?PDO $pdo = null): bool
+    {
+        $pdo ??= Database::getConnection();
+        $stmt = $pdo->prepare(
+            'UPDATE categories
+             SET name = :name, icon_url = :icon_url
+             WHERE category_id = :category_id'
+        );
+
+        return $stmt->execute([
+            ':category_id' => $categoryId,
+            ':name' => $name,
+            ':icon_url' => $iconUrl,
+        ]);
+    }
+
+    public static function delete(int $categoryId, ?PDO $pdo = null): bool
+    {
+        $pdo ??= Database::getConnection();
+        $stmt = $pdo->prepare('DELETE FROM categories WHERE category_id = :category_id');
+        $stmt->execute([':category_id' => $categoryId]);
+
+        return $stmt->rowCount() > 0;
     }
 
     /** @return array<string, string> slug => カテゴリ名 */

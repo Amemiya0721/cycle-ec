@@ -20,6 +20,7 @@ CREATE TABLE users (
     user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     name VARCHAR(100) NOT NULL,
+    icon_url VARCHAR(500) NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
 
@@ -99,7 +100,7 @@ CREATE TABLE products (
     tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00,
 
     status VARCHAR(50) NOT NULL DEFAULT 'on_sale',
-    `condition` VARCHAR(50) NOT NULL DEFAULT 'used',
+    product_condition VARCHAR(50) NOT NULL DEFAULT 'used',
 
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
