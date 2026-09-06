@@ -1,42 +1,19 @@
 <?php
 
 /**
- * database.php
+ * product-create.php
  * -----------------------------------------------------------
  * config.php のDB設定を使用してPDO接続を生成する。
  */
 
-$config = require 'C:\workspace\Cycle-ec\config\config.php';
-
-$db = $config['db'];
-
-$dsn = sprintf(
-    'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-    $db['host'],
-    $db['port'],
-    $db['name'],
-    $db['charset']
-);
-
-$options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
-];
+require_once __DIR__ . '/../../../src/Database.php';
+require_once __DIR__ . '/../../../src/Product.php';
+require_once __DIR__ . '/../../../src/Category.php';
 
 try {
-
-    $pdo = new PDO(
-        $dsn,
-        $db['user'],
-        $db['password'],
-        $options
-    );
-
+    $pdo = Database::getConnection();
 } catch (PDOException $e) {
-
     exit('データベースへの接続に失敗しました。');
-
 }
 
 $errors = [];
@@ -48,6 +25,7 @@ $price            = $_POST['price'] ?? '';
 $taxRate          = $_POST['tax_rate'] ?? '10';
 $status            = $_POST['status'] ?? '';
 $productCondition = $_POST['product_condition'] ?? '';
+$categories = Category::all();
 
 
 // ========================================
@@ -141,55 +119,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
 
 
-            // --------------------------------
-            // products登録
-            // --------------------------------
-
-            $sql = "
-                INSERT INTO products (
-                    category_id,
-                    name,
-                    description,
-                    price,
-                    tax_rate,
-                    status,
-                    product_condition,
-                    is_deleted,
-                    created_at,
-                    updated_at
-                )
-                VALUES (
-                    :category_id,
-                    :name,
-                    :description,
-                    :price,
-                    :tax_rate,
-                    :status,
-                    :product_condition,
-                    0,
-                    NOW(),
-                    NOW()
-                )
-            ";
-
-            $stmt = $pdo->prepare($sql);
-
-            $stmt->execute([
-                ':category_id'       => $categoryId,
-                ':name'              => $name,
-                ':description'       => $description,
-                ':price'             => $price,
-                ':tax_rate'          => $taxRate,
-                ':status'            => $status,
-                ':product_condition' => $productCondition
+            $productId = Product::create([
+                'category_id' => (int) $categoryId,
+                'name' => $name,
+                'description' => $description,
+                'price' => $price,
+                'tax_rate' => $taxRate,
+                'status' => $status,
+                'product_condition' => $productCondition,
             ]);
-
-
-            // --------------------------------
-            // 登録された商品ID取得
-            // --------------------------------
-
-            $productId = $pdo->lastInsertId();
 
 
             // --------------------------------
@@ -445,33 +383,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             選択してください
                         </option>
 
-                        <option value="1"
-                            <?= ($categoryId ?? '') == '1'
-                                ? 'selected'
-                                : '' ?>>
-                            ロードバイク
-                        </option>
-
-                        <option value="2"
-                            <?= ($categoryId ?? '') == '2'
-                                ? 'selected'
-                                : '' ?>>
-                            ホイール
-                        </option>
-
-                        <option value="3"
-                            <?= ($categoryId ?? '') == '3'
-                                ? 'selected'
-                                : '' ?>>
-                            コンポーネント
-                        </option>
-
-                        <option value="4"
-                            <?= ($categoryId ?? '') == '4'
-                                ? 'selected'
-                                : '' ?>>
-                            パーツ
-                        </option>
+                        <?php foreach ($categories as $category): ?>
+                            <option value="<?= (int) $category['category_id'] ?>"
+                                <?= (string) $categoryId === (string) $category['category_id'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
 
                     </select>
 

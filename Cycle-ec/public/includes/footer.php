@@ -15,19 +15,19 @@
                 <div class="col-6 col-lg-2 footer-col">
                     <h5>商品を探す</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#" data-cat="all">商品一覧</a></li>
-                        <li><a href="#" data-cat="road">ロードバイク</a></li>
-                        <li><a href="#" data-cat="wheel">ホイール</a></li>
-                        <li><a href="#" data-cat="component">コンポーネント</a></li>
-                        <li><a href="#" data-cat="parts">パーツ</a></li>
-                        <li><a href="#" data-cat="wear">ウェア・用品</a></li>
-                        <li><a href="#" data-cat="junk">ジャンク倉庫</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/products.php">商品一覧</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/products.php?category=road">ロードバイク</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/products.php?category=wheel">ホイール</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/products.php?category=component">コンポーネント</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/products.php?category=parts">パーツ</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/products.php?category=wear">ウェア・用品</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/products.php?category=junk">ジャンク倉庫</a></li>
                     </ul>
                 </div>
                 <div class="col-6 col-lg-2 footer-col">
                     <h5>サポート</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#">お問い合わせ</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/contact.php">お問い合わせ</a></li>
                         <li><a href="#">配送について</a></li>
                         <li><a href="#">返品・返金について</a></li>
                         <li><a href="#">中古商品について</a></li>
@@ -38,7 +38,7 @@
                 <div class="col-6 col-lg-2 footer-col">
                     <h5>ABOUT</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#">OVERHAULについて</a></li>
+                        <li><a href="<?= $baseUrl ?>index.php#about">OVERHAULについて</a></li>
                         <li><a href="#">ご利用ガイド</a></li>
                         <li><a href="#">特定商取引法に基づく表記</a></li>
                         <li><a href="#">プライバシーポリシー</a></li>

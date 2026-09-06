@@ -34,9 +34,12 @@ function yen(n) {
 
 function renderCategories() {
   const grid = document.getElementById('cat-grid');
+  if (grid.children.length > 0) {
+    return;
+  }
   grid.innerHTML = CATEGORIES.map(c => `
     <div class="col-6 col-lg">
-      <a href="#" class="cat-card" style="--cat-bg:${c.color}" data-cat="${c.key}">
+      <a href="pages/products.php?category=${c.key}" class="cat-card" style="--cat-bg:${c.color}" data-cat="${c.key}">
         <div class="cat-icon">${c.icon}</div>
         <div class="cat-jp">${c.jp}</div>
         <div class="cat-en">${c.en}</div>
@@ -48,7 +51,7 @@ function renderNew() {
   const grid = document.getElementById('new-grid');
   grid.innerHTML = NEW_PRODUCTS.map(p => `
     <div class="col-6 col-md-4 col-lg">
-      <div class="prod-card" data-cat="${p.cat}">
+      <a href="pages/products.php?keyword=${encodeURIComponent(p.name)}" class="prod-card" data-cat="${p.cat}">
         <div class="prod-thumb">
           <span class="badge-new">NEW</span>
           <span class="rank-badge">${p.rank}${p.rank !== 'JUNK' ? 'ランク' : ''}</span>
@@ -58,7 +61,7 @@ function renderNew() {
           <div class="prod-name">${p.name}</div>
           <div class="prod-price">${yen(p.price)}<span class="tax">税込</span></div>
         </div>
-      </div>
+      </a>
     </div>`).join('');
 }
 
@@ -68,7 +71,7 @@ function renderDown() {
     const off = Math.round((1 - p.price / p.old) * 100);
     return `
     <div class="col-6 col-md-4 col-lg">
-      <div class="prod-card" data-cat="${p.cat}">
+      <a href="pages/products.php?keyword=${encodeURIComponent(p.name)}" class="prod-card" data-cat="${p.cat}">
         <div class="prod-thumb">
           <span class="badge-down">PRICE DOWN</span>
           <span class="off-badge">${off}%<br>OFF</span>
@@ -78,7 +81,7 @@ function renderDown() {
           <div class="prod-name">${p.name}</div>
           <div><span class="price-old">${yen(p.old)}</span><span class="price-new">${yen(p.price)}</span><span class="tax">税込</span></div>
         </div>
-      </div>
+      </a>
     </div>`;
   }).join('');
 }
@@ -94,10 +97,6 @@ let cartCount = 0;
 function updateCartBadge() {
   document.getElementById('cart-count-top').textContent = cartCount;
 }
-document.getElementById('cart-link-top').addEventListener('click', e => {
-  e.preventDefault();
-  alert('カートページへ遷移します（実装予定）');
-});
 updateCartBadge();
 
 // ==================================================
@@ -106,44 +105,12 @@ updateCartBadge();
 document.body.addEventListener('click', e => {
   const el = e.target.closest('[data-cat]');
   if (el) {
-    e.preventDefault();
     const cat = el.getAttribute('data-cat');
-    document.getElementById('new-products').scrollIntoView({ behavior: 'smooth' });
-    console.log('カテゴリ遷移:', cat);
+    if (el.classList.contains('cat-card')) {
+      e.preventDefault();
+      window.location.href = `pages/products.php?category=${encodeURIComponent(cat)}`;
+    }
   }
-});
-
-// product card click -> product detail (placeholder)
-document.body.addEventListener('click', e => {
-  const card = e.target.closest('.prod-card');
-  if (card) {
-    console.log('商品詳細へ遷移:', card.querySelector('.prod-name').textContent);
-  }
-});
-
-// ==================================================
-// SEARCH
-// ==================================================
-function doSearch(keyword) {
-  if (!keyword.trim()) return;
-  alert('「' + keyword + '」で商品を検索します（実装予定）');
-}
-document.getElementById('search-form').addEventListener('submit', e => {
-  e.preventDefault();
-  doSearch(document.getElementById('search-input').value);
-});
-document.getElementById('mobile-search-form').addEventListener('submit', e => {
-  e.preventDefault();
-  const input = e.target.querySelector('input');
-  doSearch(input.value);
-});
-
-// ==================================================
-// NEWS LINK
-// ==================================================
-document.getElementById('news-more').addEventListener('click', e => {
-  e.preventDefault();
-  console.log('NEWS一覧へ遷移');
 });
 
 // ==================================================
@@ -153,14 +120,6 @@ document.getElementById('newsletter-form').addEventListener('submit', e => {
   e.preventDefault();
   alert('メールマガジンに登録しました（仮）');
   e.target.reset();
-});
-
-// ==================================================
-// LOGIN LINK (placeholder)
-// ==================================================
-document.getElementById('login-link').addEventListener('click', e => {
-  e.preventDefault();
-  console.log('ログイン/会員登録へ遷移');
 });
 
 // ==================================================

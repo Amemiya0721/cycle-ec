@@ -8,7 +8,7 @@ require_once __DIR__ . '/Database.php';
  * -----------------------------------------------------------
  * カテゴリの検索・解決処理を集約する。
  *
- * 現行ER図の CATEGORIES は (category_id, name) のみを持ち、
+ * 現行ER図の CATEGORIES は category_id, name, icon_url を持ち、
  * URL用のslugカラムは存在しない。
  * そのため、URLパラメータ category（例: "road-bike"）を
  * category_id へ解決する処理をこのクラスに閉じ込め、
@@ -50,13 +50,28 @@ class Category
     /**
      * カテゴリ一覧を取得する（検索フォームのプルダウン等に使用）。
      *
-     * @return array<int, array{category_id:int, name:string}>
+     * @return array<int, array{category_id:int, name:string, icon_url:?string}>
      */
     public static function all(): array
     {
         $pdo = Database::getConnection();
-        $stmt = $pdo->query('SELECT category_id, name FROM CATEGORIES ORDER BY category_id ASC');
+        $stmt = $pdo->query('SELECT category_id, name, icon_url FROM CATEGORIES ORDER BY category_id ASC');
         return $stmt->fetchAll();
+    }
+
+    public static function create(string $name, ?string $iconUrl = null, ?PDO $pdo = null): int
+    {
+        $pdo ??= Database::getConnection();
+        $stmt = $pdo->prepare(
+            'INSERT INTO categories (name, icon_url)
+             VALUES (:name, :icon_url)'
+        );
+        $stmt->execute([
+            ':name' => $name,
+            ':icon_url' => $iconUrl,
+        ]);
+
+        return (int) $pdo->lastInsertId();
     }
 
     /** @return array<string, string> slug => カテゴリ名 */

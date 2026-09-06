@@ -34,6 +34,125 @@ require_once __DIR__ . '/Category.php';
  */
 class Product
 {
+    public static function findById(int $productId): ?array
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare(
+            'SELECT
+                p.product_id,
+                p.category_id,
+                p.name,
+                p.description,
+                p.price,
+                p.tax_rate,
+                p.status,
+                p.product_condition,
+                p.is_deleted,
+                p.created_at,
+                p.updated_at,
+                c.name AS category_name
+             FROM products p
+             INNER JOIN categories c ON c.category_id = p.category_id
+             WHERE p.product_id = :product_id
+               AND p.is_deleted = 0
+             LIMIT 1'
+        );
+        $stmt->execute([':product_id' => $productId]);
+        $product = $stmt->fetch();
+
+        if ($product === false) {
+            return null;
+        }
+
+        $imageStmt = $pdo->prepare(
+            'SELECT image_id, product_id, image_url, sort_order, created_at
+             FROM product_images
+             WHERE product_id = :product_id
+             ORDER BY sort_order ASC, image_id ASC'
+        );
+        $imageStmt->execute([':product_id' => $productId]);
+        $product['images'] = $imageStmt->fetchAll();
+
+        return $product;
+    }
+
+    public static function create(array $data): int
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare(
+            'INSERT INTO products
+                (category_id, name, description, price, tax_rate, status,
+                 product_condition, is_deleted)
+             VALUES
+                (:category_id, :name, :description, :price, :tax_rate, :status,
+                 :product_condition, 0)'
+        );
+        $stmt->execute([
+            ':category_id' => $data['category_id'],
+            ':name' => $data['name'],
+            ':description' => $data['description'] ?? null,
+            ':price' => $data['price'],
+            ':tax_rate' => $data['tax_rate'],
+            ':status' => $data['status'],
+            ':product_condition' => $data['product_condition'],
+        ]);
+
+        return (int) $pdo->lastInsertId();
+    }
+
+    public static function update(int $productId, array $data): bool
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare(
+            'UPDATE products
+             SET category_id = :category_id,
+                 name = :name,
+                 description = :description,
+                 price = :price,
+                 tax_rate = :tax_rate,
+                 status = :status,
+                 product_condition = :product_condition
+             WHERE product_id = :product_id
+               AND is_deleted = 0'
+        );
+
+        return $stmt->execute([
+            ':product_id' => $productId,
+            ':category_id' => $data['category_id'],
+            ':name' => $data['name'],
+            ':description' => $data['description'] ?? null,
+            ':price' => $data['price'],
+            ':tax_rate' => $data['tax_rate'],
+            ':status' => $data['status'],
+            ':product_condition' => $data['product_condition'],
+        ]);
+    }
+
+    public static function delete(int $productId): bool
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare(
+            'UPDATE products
+             SET is_deleted = 1
+             WHERE product_id = :product_id
+               AND is_deleted = 0'
+        );
+
+        return $stmt->execute([':product_id' => $productId]);
+    }
+
+    public static function priceHistory(int $productId): array
+    {
+        $stmt = Database::getConnection()->prepare(
+            'SELECT price_history_id, product_id, price, tax_rate, created_at
+             FROM product_price_history
+             WHERE product_id = :product_id
+             ORDER BY created_at DESC, price_history_id DESC'
+        );
+        $stmt->execute([':product_id' => $productId]);
+        return $stmt->fetchAll();
+    }
+
     /**
      * キーワード検索の対象カラム。
      *

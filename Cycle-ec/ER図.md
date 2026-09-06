@@ -39,6 +39,7 @@ erDiagram
     CATEGORIES {
         int category_id PK
         varchar name
+        icon_url varchar(500)
         datetime created_at
         datetime updated_at
     }

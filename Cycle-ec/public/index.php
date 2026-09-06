@@ -4,6 +4,9 @@ $config = require __DIR__ . '/../config/config.php';
 
 $baseUrl = $config['app']['base_url'];
 
+require_once __DIR__ . '/../src/Category.php';
+$categories = Category::all();
+
 $pageCss = 'index.css';
 
 require_once __DIR__ . '/includes/header.php';
@@ -63,7 +66,7 @@ require_once __DIR__ . '/includes/nav.php';
         </span>
 
         <a
-            href="<?= $baseUrl ?>pages/news.php"
+            href="<?= $baseUrl ?>pages/products.php?sort=newest"
             class="more-link"
             id="news-more">
             一覧を見る &gt;
@@ -101,7 +104,7 @@ require_once __DIR__ . '/includes/nav.php';
                 <!-- CARD 1 -->
                 <div class="swiper-slide">
 
-                    <a href="#" class="product-card">
+                    <a href="<?= $baseUrl ?>pages/products.php?category=road" class="product-card">
 
                         <div class="product-image">
 
@@ -140,7 +143,7 @@ require_once __DIR__ . '/includes/nav.php';
                 <!-- CARD 2 -->
                 <div class="swiper-slide">
 
-                    <a href="#" class="product-card">
+                    <a href="<?= $baseUrl ?>pages/products.php?category=component" class="product-card">
 
                         <div class="product-image">
 
@@ -179,7 +182,7 @@ require_once __DIR__ . '/includes/nav.php';
                 <!-- CARD 3 -->
                 <div class="swiper-slide">
 
-                    <a href="#" class="product-card">
+                    <a href="<?= $baseUrl ?>pages/products.php?category=wheel" class="product-card">
 
                         <div class="product-image">
 
@@ -218,7 +221,7 @@ require_once __DIR__ . '/includes/nav.php';
                 <!-- CARD 4 -->
                 <div class="swiper-slide">
 
-                    <a href="#" class="product-card">
+                    <a href="<?= $baseUrl ?>pages/products.php?category=parts" class="product-card">
 
                         <div class="product-image">
 
@@ -257,7 +260,7 @@ require_once __DIR__ . '/includes/nav.php';
                 <!-- CARD 5 -->
                 <div class="swiper-slide">
 
-                    <a href="#" class="product-card">
+                    <a href="<?= $baseUrl ?>pages/products.php?category=component" class="product-card">
 
                         <div class="product-image">
 
@@ -318,7 +321,23 @@ require_once __DIR__ . '/includes/nav.php';
 
         <div
             class="row g-3"
-            id="cat-grid"></div>
+            id="cat-grid">
+            <?php foreach ($categories as $category): ?>
+                <div class="col-6 col-lg">
+                    <a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>" class="cat-card" data-category-id="<?= (int) $category['category_id'] ?>">
+                        <div class="cat-icon">
+                            <?php if (!empty($category['icon_url'])): ?>
+                                <img src="<?= htmlspecialchars((string) $category['icon_url'], ENT_QUOTES, 'UTF-8') ?>" alt="">
+                            <?php else: ?>
+                                <span aria-hidden="true">🚲</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="cat-jp"><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></div>
+                        <div class="cat-en">CATEGORY</div>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
 
         <div class="cat-more">
             <a
@@ -340,7 +359,7 @@ require_once __DIR__ . '/includes/nav.php';
             <h2>新着商品</h2>
 
             <a
-                href="<?= $baseUrl ?>pages/products.php?sort=new"
+                href="<?= $baseUrl ?>pages/products.php?sort=newest"
                 class="more-link">
                 一覧を見る &gt;
             </a>
@@ -364,7 +383,7 @@ require_once __DIR__ . '/includes/nav.php';
             <h2>値下げしました</h2>
 
             <a
-                href="<?= $baseUrl ?>pages/products.php?sort=price_down"
+                href="<?= $baseUrl ?>pages/products.php?sort=price_desc"
                 class="more-link">
                 一覧を見る &gt;
             </a>
@@ -446,7 +465,7 @@ require_once __DIR__ . '/includes/nav.php';
 
 
 <!-- ABOUT / INFO -->
-<section>
+<section id="about">
     <div class="container">
 
         <div class="row g-5">
@@ -462,7 +481,7 @@ require_once __DIR__ . '/includes/nav.php';
                 </p>
 
                 <a
-                    href="<?= $baseUrl ?>pages/about.php"
+                    href="<?= $baseUrl ?>index.php#about"
                     class="detail-link">
                     詳しく見る &gt;
                 </a>

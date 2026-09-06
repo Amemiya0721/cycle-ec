@@ -1,0 +1,7 @@
+<?php
+
+declare(strict_types=1);
+require_once __DIR__ . '/../../src/Order.php';
+try { $orders = Order::all(); } catch (PDOException $exception) { $orders = []; $errorMessage = '注文一覧の取得に失敗しました。'; }
+function h(?string $value): string { return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8'); }
+?><!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>注文管理 | OVERHAUL</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head><body class="bg-light"><nav class="navbar navbar-dark bg-dark"><div class="container"><a class="navbar-brand" href="index.php">OVERHAUL 管理画面</a></div></nav><main class="container py-4"><h1 class="h3 mb-4">注文管理</h1><?php if (isset($errorMessage)): ?><div class="alert alert-danger"><?= h($errorMessage) ?></div><?php endif; ?><div class="card"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>注文番号</th><th>ユーザー</th><th>メール</th><th>合計</th><th>ステータス</th><th>注文日時</th></tr></thead><tbody><?php foreach ($orders as $order): ?><tr><td><?= (int) $order['order_id'] ?></td><td><?= h((string) $order['user_name']) ?></td><td><?= h((string) $order['email']) ?></td><td><?= number_format((float) $order['total_price']) ?>円</td><td><?= h((string) $order['status']) ?></td><td><?= h((string) $order['ordered_at']) ?></td></tr><?php endforeach; ?><?php if (!$orders): ?><tr><td colspan="6" class="text-center">注文はありません。</td></tr><?php endif; ?></tbody></table></div></div></main></body></html>

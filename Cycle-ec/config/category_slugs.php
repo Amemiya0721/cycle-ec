@@ -16,6 +16,7 @@ declare(strict_types=1);
  * このファイルを廃止しDB側の値を正とすればよい（Category.php側の1関数を差し替えるだけで済む設計）。
  */
 return [
+    'road'        => 'ロードバイク',
     'road-bike'   => 'ロードバイク',
     'wheel'       => 'ホイール',
     'component'   => 'コンポーネント',
