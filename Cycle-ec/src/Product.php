@@ -206,6 +206,62 @@ class Product
         return $stmt->fetchAll();
     }
 
+    public static function allForDiscountManagement(): array
+    {
+        $stmt = Database::getConnection()->query(
+            'SELECT p.product_id, p.name, p.price, p.status,
+                    c.name AS category_name
+             FROM products p
+             INNER JOIN categories c ON c.category_id = p.category_id
+             WHERE p.is_deleted = 0
+             ORDER BY p.updated_at DESC, p.product_id DESC'
+        );
+        return $stmt->fetchAll();
+    }
+
+    public static function updatePrice(int $productId, string $newPrice): bool
+    {
+        $pdo = Database::getConnection();
+        try {
+            $pdo->beginTransaction();
+            $currentStmt = $pdo->prepare(
+                'SELECT price, tax_rate FROM products
+                 WHERE product_id = :product_id AND is_deleted = 0 FOR UPDATE'
+            );
+            $currentStmt->execute([':product_id' => $productId]);
+            $current = $currentStmt->fetch();
+            if ($current === false) {
+                throw new RuntimeException('商品が見つかりません。');
+            }
+
+            if ((float) $current['price'] !== (float) $newPrice) {
+                $historyStmt = $pdo->prepare(
+                    'INSERT INTO product_price_history (product_id, price, tax_rate)
+                     VALUES (:product_id, :price, :tax_rate)'
+                );
+                $historyStmt->execute([
+                    ':product_id' => $productId,
+                    ':price' => $current['price'],
+                    ':tax_rate' => $current['tax_rate'],
+                ]);
+                $updateStmt = $pdo->prepare(
+                    'UPDATE products SET price = :price WHERE product_id = :product_id'
+                );
+                $updateStmt->execute([
+                    ':product_id' => $productId,
+                    ':price' => $newPrice,
+                ]);
+            }
+            $pdo->commit();
+            return true;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
+    }
+
     /**
      * キーワード検索の対象カラム。
      *

@@ -125,7 +125,6 @@ require __DIR__ . '/includes/header.php';
                 <div class="mb-3">
                     <label for="name" class="form-label">カテゴリ名 <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="name" name="name" maxlength="100" value="<?= h($name) ?>" required>
-                        <input type="text" class="form-control" id="name" name="name" maxlength="100" value="<?= h($name) ?>" required>
                 </div>
                 <div class="mb-4">
                     <label for="icon" class="form-label">カテゴリ画像</label>

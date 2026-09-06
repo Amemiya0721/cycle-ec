@@ -155,7 +155,6 @@ require_once __DIR__ . '/includes/nav.php';
                             <?php endif; ?>
                         </div>
                         <div class="cat-jp"><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></div>
-                        <div class="cat-en">CATEGORY</div>
                     </a>
                 </div>
             <?php endforeach; ?>

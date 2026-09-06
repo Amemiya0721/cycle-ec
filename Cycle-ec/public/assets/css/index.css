@@ -246,8 +246,9 @@ section+section {
   position: absolute;
   right: -40px;
   bottom: -20px;
-  width: 640px;
-  height: 440px;
+  width: min(50vw, 640px);
+  height: auto;
+  aspect-ratio: 640 / 440;
   opacity: .9;
   pointer-events: none;
 }
@@ -259,7 +260,7 @@ section+section {
 }
 
 .hero-inner h1 {
-  font-size: 40px;
+  font-size: clamp(28px, 3.2vw, 40px);
   line-height: 1.35;
   font-weight: 800;
   letter-spacing: .02em;
@@ -320,8 +321,8 @@ section+section {
 ======================================== */
 
 #recommend {
-    padding: 80px 0;
-    background: #f5f5f3;
+  padding: 80px 0;
+  background: #f5f5f3;
 }
 
 
@@ -330,29 +331,29 @@ section+section {
 ------------------------------ */
 
 #recommend .section-head {
-    margin-bottom: 28px;
+  margin-bottom: 28px;
 }
 
 #recommend .section-label {
-    display: block;
+  display: block;
 
-    margin-bottom: 4px;
+  margin-bottom: 4px;
 
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
 
-    color: #888;
+  color: #888;
 }
 
 #recommend h2 {
-    margin: 0;
+  margin: 0;
 
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 
-    color: #222;
+  color: #222;
 }
 
 
@@ -361,9 +362,9 @@ section+section {
 ------------------------------ */
 
 .recommend-swiper {
-    position: relative;
+  position: relative;
 
-    padding: 0 4px 45px;
+  padding: 0 4px 45px;
 }
 
 
@@ -372,29 +373,29 @@ section+section {
 ------------------------------ */
 
 .recommend-swiper .product-card {
-    display: block;
+  display: block;
 
-    height: 100%;
+  height: 100%;
 
-    overflow: hidden;
+  overflow: hidden;
 
-    background: #fff;
+  background: #fff;
 
-    border: 1px solid #ddd;
+  border: 1px solid #ddd;
 
-    color: #222;
-    text-decoration: none;
+  color: #222;
+  text-decoration: none;
 
-    transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .recommend-swiper .product-card:hover {
-    transform: translateY(-5px);
+  transform: translateY(-5px);
 
-    box-shadow:
-        0 10px 25px rgba(0, 0, 0, 0.10);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.10);
 }
 
 
@@ -403,28 +404,28 @@ section+section {
 ------------------------------ */
 
 .recommend-swiper .product-image {
-    position: relative;
+  position: relative;
 
-    aspect-ratio: 1 / 1;
+  aspect-ratio: 1 / 1;
 
-    overflow: hidden;
+  overflow: hidden;
 
-    background: #e9e9e7;
+  background: #e9e9e7;
 }
 
 .recommend-swiper .product-image img {
-    display: block;
+  display: block;
 
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 
-    object-fit: cover;
+  object-fit: cover;
 
-    transition: transform 0.4s ease;
+  transition: transform 0.4s ease;
 }
 
 .recommend-swiper .product-card:hover img {
-    transform: scale(1.04);
+  transform: scale(1.04);
 }
 
 
@@ -433,22 +434,22 @@ section+section {
 ------------------------------ */
 
 .recommend-swiper .product-badge {
-    position: absolute;
+  position: absolute;
 
-    top: 12px;
-    left: 12px;
+  top: 12px;
+  left: 12px;
 
-    z-index: 2;
+  z-index: 2;
 
-    padding: 5px 9px;
+  padding: 5px 9px;
 
-    background: #222;
-    color: #fff;
+  background: #222;
+  color: #fff;
 
-    font-size: 10px;
-    font-weight: 700;
+  font-size: 10px;
+  font-weight: 700;
 
-    letter-spacing: 0.12em;
+  letter-spacing: 0.12em;
 }
 
 
@@ -457,43 +458,43 @@ section+section {
 ------------------------------ */
 
 .recommend-swiper .product-info {
-    padding: 16px 16px 18px;
+  padding: 16px 16px 18px;
 }
 
 .recommend-swiper .product-category {
-    margin-bottom: 6px;
+  margin-bottom: 6px;
 
-    font-size: 10px;
-    font-weight: 700;
+  font-size: 10px;
+  font-weight: 700;
 
-    letter-spacing: 0.12em;
+  letter-spacing: 0.12em;
 
-    color: #999;
+  color: #999;
 }
 
 .recommend-swiper .product-name {
-    margin: 0 0 12px;
+  margin: 0 0 12px;
 
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.5;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
 
-    color: #222;
+  color: #222;
 
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .recommend-swiper .product-price {
-    font-size: 18px;
-    font-weight: 700;
+  font-size: 18px;
+  font-weight: 700;
 
-    letter-spacing: 0.02em;
+  letter-spacing: 0.02em;
 
-    color: #222;
+  color: #222;
 }
 
 
@@ -503,26 +504,26 @@ section+section {
 
 .recommend-swiper .swiper-button-prev,
 .recommend-swiper .swiper-button-next {
-    width: 44px;
-    height: 44px;
+  width: 44px;
+  height: 44px;
 
-    margin-top: -30px;
+  margin-top: -30px;
 
-    background: #fff;
+  background: #fff;
 
-    border: 1px solid #ccc;
+  border: 1px solid #ccc;
 
-    color: #222;
+  color: #222;
 
-    transition:
-        background 0.2s ease,
-        color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .recommend-swiper .swiper-button-prev:hover,
 .recommend-swiper .swiper-button-next:hover {
-    background: #222;
-    color: #fff;
+  background: #222;
+  color: #fff;
 }
 
 
@@ -530,9 +531,9 @@ section+section {
 
 .recommend-swiper .swiper-button-prev::after,
 .recommend-swiper .swiper-button-next::after {
-    font-size: 14px;
+  font-size: 14px;
 
-    font-weight: 700;
+  font-weight: 700;
 }
 
 
@@ -541,26 +542,26 @@ section+section {
 ------------------------------ */
 
 .recommend-swiper .swiper-pagination {
-    bottom: 5px;
+  bottom: 5px;
 }
 
 .recommend-swiper .swiper-pagination-bullet {
-    width: 6px;
-    height: 6px;
+  width: 6px;
+  height: 6px;
 
-    margin: 0 4px !important;
+  margin: 0 4px !important;
 
-    background: #aaa;
+  background: #aaa;
 
-    opacity: 1;
+  opacity: 1;
 }
 
 .recommend-swiper .swiper-pagination-bullet-active {
-    width: 20px;
+  width: 20px;
 
-    border-radius: 3px;
+  border-radius: 3px;
 
-    background: #222;
+  background: #222;
 }
 
 
@@ -569,18 +570,18 @@ section+section {
 ------------------------------ */
 
 #recommend .more-link {
-    color: #555;
+  color: #555;
 
-    font-size: 13px;
-    font-weight: 600;
+  font-size: 13px;
+  font-weight: 600;
 
-    text-decoration: none;
+  text-decoration: none;
 
-    white-space: nowrap;
+  white-space: nowrap;
 }
 
 #recommend .more-link:hover {
-    color: #000;
+  color: #000;
 }
 
 
@@ -590,37 +591,36 @@ section+section {
 
 @media (max-width: 767px) {
 
-    #recommend {
-        padding: 60px 0;
-    }
+  #recommend {
+    padding: 60px 0;
+  }
 
-    #recommend h2 {
-        font-size: 23px;
-    }
+  #recommend h2 {
+    font-size: 23px;
+  }
 
-    .recommend-swiper {
-        padding-left: 0;
-        padding-right: 0;
-    }
+  .recommend-swiper {
+    padding-left: 0;
+    padding-right: 0;
+  }
 
-    .recommend-swiper .swiper-button-prev,
-    .recommend-swiper .swiper-button-next {
-        display: none;
-    }
+  .recommend-swiper .swiper-button-prev,
+  .recommend-swiper .swiper-button-next {
+    display: none;
+  }
 
-    .recommend-swiper .product-info {
-        padding: 14px;
-    }
+  .recommend-swiper .product-info {
+    padding: 14px;
+  }
 
-    .recommend-swiper .product-name {
-        font-size: 14px;
-    }
+  .recommend-swiper .product-name {
+    font-size: 14px;
+  }
 
-    .recommend-swiper .product-price {
-        font-size: 16px;
-    }
+  .recommend-swiper .product-price {
+    font-size: 16px;
+  }
 }
-
 
 
 
@@ -637,61 +637,69 @@ section+section {
 
 .cat-card {
   position: relative;
-  aspect-ratio: 3/3.6;
+  aspect-ratio: 3 / 3.6;
   border-radius: 2px;
   overflow: hidden;
+
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+
   color: #fff;
   text-align: center;
-  gap: 10px;
+
   isolation: isolate;
   width: 100%;
 }
 
-.cat-card::before {
-  content: "";
+/* カテゴリ画像 */
+.cat-icon {
   position: absolute;
   inset: 0;
-  z-index: -2;
-  background: var(--cat-bg, linear-gradient(160deg, #3a3d43, #15171a));
+
+  width: 100%;
+  height: 100%;
+
+  display: block;
 }
 
+.cat-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 画像の上に暗いフィルター */
 .cat-card::after {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: linear-gradient(180deg, rgba(0, 0, 0, .25), rgba(0, 0, 0, .55));
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, .15),
+    rgba(0, 0, 0, .55)
+  );
 }
 
-.cat-card:hover::after {
-  background: linear-gradient(180deg, rgba(0, 0, 0, .15), rgba(0, 0, 0, .45));
-}
-
-.cat-icon {
-  width: 44px;
-  height: 44px;
-  border: 1.5px solid #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
+/* カテゴリ名 */
 .cat-jp {
-  font-size: 15px;
+  position: relative;
+  z-index: 2;
+
+  background: rgba(20, 20, 20, .45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 10px;
+
+  padding: 10px 20px;
+
+  font-size: clamp(12px, 1.2vw, 15px);
   font-weight: 700;
   letter-spacing: .04em;
-}
-
-.cat-en {
-  font-size: 10px;
-  letter-spacing: .14em;
-  color: #e2e2e2;
 }
 
 .cat-more {
@@ -705,6 +713,7 @@ section+section {
   border-bottom: 1px solid var(--sub);
   padding-bottom: 2px;
 }
+
 
 /* ---------- PRODUCT CARD ---------- */
 .prod-card {
@@ -728,6 +737,13 @@ section+section {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.prod-thumb .prod-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .prod-thumb .thumb-icon {
@@ -791,7 +807,7 @@ section+section {
 }
 
 .prod-name {
-  font-size: 12.5px;
+  font-size: clamp(11px, 1vw, 12.5px);
   line-height: 1.5;
   height: 38px;
   overflow: hidden;
@@ -891,6 +907,22 @@ section+section {
     padding-top: 20px;
   }
 }
+/* ---------- price down ---------- */
+
+.prod-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+}
+
+.prod-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 
 /* ---------- ABOUT / INFO ---------- */
 h3 {
@@ -1066,8 +1098,8 @@ footer {
   }
 
   .hero-bike {
-    width: 340px;
-    height: 260px;
+    width: min(52vw, 340px);
+    height: auto;
     opacity: .5;
   }
 
@@ -1077,6 +1109,38 @@ footer {
 }
 
 @media(max-width:576px) {
+  .hero {
+    height: 380px;
+  }
+
+  .hero-bike {
+    right: -72px;
+    bottom: -8px;
+    width: 72vw;
+  }
+
+  .cat-icon {
+    width: 18%;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  .cat-card {
+    aspect-ratio: 1 / 1.15;
+  }
+
+  .prod-info {
+    padding: 10px 9px 12px;
+  }
+
+  .prod-name {
+    height: 34px;
+  }
+
+  .prod-price {
+    font-size: 14px;
+  }
+
   .hero-inner p {
     font-size: 13px;
   }
@@ -1171,5 +1235,3 @@ footer {
     transition-duration: .01ms;
   }
 }
-
-
