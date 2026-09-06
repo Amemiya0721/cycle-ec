@@ -1,8 +1,21 @@
 <?php
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+  session_start();
+}
+
 $config = require __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../src/Category.php';
 
 $baseUrl = $config['app']['base_url'];
+$isLoggedIn = !empty($_SESSION['user_id']);
+$loggedInName = (string) ($_SESSION['user_name'] ?? '');
+$categories = [];
+try {
+  $categories = Category::all();
+} catch (Throwable $exception) {
+  error_log('Navigation category loading failed: ' . $exception->getMessage());
+}
 
 ?>
 
@@ -58,23 +71,19 @@ $baseUrl = $config['app']['base_url'];
       <!-- 会員・カート -->
       <ul class="user-nav d-flex justify-content-end align-items-center gap-4 mb-2 list-unstyled">
 
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/register.php"
-            id="register-link"
-          >
-            新規登録
-          </a>
-        </li>
-
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/login.php"
-            id="login-link"
-          >
-            ログイン
-          </a>
-        </li>
+        <?php if ($isLoggedIn): ?>
+          <li class="text-muted"><?= htmlspecialchars($loggedInName, ENT_QUOTES, 'UTF-8') ?> さん</li>
+          <li>
+            <a href="<?= $baseUrl ?>pages/logout.php" id="logout-link">ログアウト</a>
+          </li>
+        <?php else: ?>
+          <li>
+            <a href="<?= $baseUrl ?>pages/register.php" id="register-link">新規登録</a>
+          </li>
+          <li>
+            <a href="<?= $baseUrl ?>pages/login.php" id="login-link">ログイン</a>
+          </li>
+        <?php endif; ?>
 
         <li>
           <a
@@ -101,59 +110,13 @@ $baseUrl = $config['app']['base_url'];
           </a>
         </li>
 
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/products.php?category=road"
-            data-cat="road"
-          >
-            ロードバイク
-          </a>
-        </li>
-
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/products.php?category=wheel"
-            data-cat="wheel"
-          >
-            ホイール
-          </a>
-        </li>
-
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/products.php?category=component"
-            data-cat="component"
-          >
-            コンポーネント
-          </a>
-        </li>
-
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/products.php?category=parts"
-            data-cat="parts"
-          >
-            パーツ
-          </a>
-        </li>
-
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/products.php?category=wear"
-            data-cat="wear"
-          >
-            ウェア・用品
-          </a>
-        </li>
-
-        <li>
-          <a
-            href="<?= $baseUrl ?>pages/products.php?category=junk"
-            data-cat="junk"
-          >
-            ジャンク倉庫
-          </a>
-        </li>
+        <?php foreach ($categories as $category): ?>
+          <li>
+            <a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>" data-cat="<?= (int) $category['category_id'] ?>">
+              <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
+            </a>
+          </li>
+        <?php endforeach; ?>
 
         <li>
           <a href="<?= $baseUrl ?>pages/contact.php">
@@ -215,23 +178,13 @@ $baseUrl = $config['app']['base_url'];
     <!-- 会員メニュー -->
     <ul class="mobile-user-nav list-unstyled">
 
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/register.php"
-          id="mobile-register-link"
-        >
-          新規登録
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/login.php"
-          id="mobile-login-link"
-        >
-          ログイン
-        </a>
-      </li>
+      <?php if ($isLoggedIn): ?>
+        <li class="text-muted"><?= htmlspecialchars($loggedInName, ENT_QUOTES, 'UTF-8') ?> さん</li>
+        <li><a href="<?= $baseUrl ?>pages/logout.php" id="mobile-logout-link">ログアウト</a></li>
+      <?php else: ?>
+        <li><a href="<?= $baseUrl ?>pages/register.php" id="mobile-register-link">新規登録</a></li>
+        <li><a href="<?= $baseUrl ?>pages/login.php" id="mobile-login-link">ログイン</a></li>
+      <?php endif; ?>
 
       <li>
         <a
@@ -266,59 +219,13 @@ $baseUrl = $config['app']['base_url'];
         </a>
       </li>
 
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/products.php?category=road"
-          data-cat="road"
-        >
-          ロードバイク
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/products.php?category=wheel"
-          data-cat="wheel"
-        >
-          ホイール
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/products.php?category=component"
-          data-cat="component"
-        >
-          コンポーネント
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/products.php?category=parts"
-          data-cat="parts"
-        >
-          パーツ
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/products.php?category=wear"
-          data-cat="wear"
-        >
-          ウェア・用品
-        </a>
-      </li>
-
-      <li>
-        <a
-          href="<?= $baseUrl ?>pages/products.php?category=junk"
-          data-cat="junk"
-        >
-          ジャンク倉庫
-        </a>
-      </li>
+      <?php foreach ($categories as $category): ?>
+        <li>
+          <a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>" data-cat="<?= (int) $category['category_id'] ?>">
+            <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
+          </a>
+        </li>
+      <?php endforeach; ?>
 
       <li>
         <a href="<?= $baseUrl ?>pages/contact.php">

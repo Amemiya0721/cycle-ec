@@ -55,6 +55,10 @@
 }
 .search-field--keyword { flex: 1 1 240px; }
 .search-field--keyword input { width: 100%; }
+.search-field--condition { min-width: 100%; }
+.search-field--condition legend { float: none; width: auto; margin: 0; color: var(--sub); font-size: 12.5px; }
+.condition-options { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.condition-option { display: inline-flex; align-items: center; gap: 5px; color: var(--ink); cursor: pointer; }
 
 .search-submit {
   background: var(--ink);

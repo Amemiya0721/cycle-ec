@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 require_once __DIR__ . '/../../../src/Product.php';
+require_once __DIR__ . '/../includes/auth.php';
 $productId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$productId || $productId < 1) { http_response_code(400); exit('商品IDが正しくありません。'); }
 try { $product = Product::findById($productId); } catch (PDOException $exception) { http_response_code(500); exit('商品情報の取得に失敗しました。'); }

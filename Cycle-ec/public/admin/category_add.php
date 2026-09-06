@@ -3,12 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../src/Database.php';
 require_once __DIR__ . '/../../src/Category.php';
+require_once __DIR__ . '/includes/auth.php';
 
-<<<<<<< HEAD
 const MAX_CATEGORY_NAME_LENGTH = 100;
-=======
-const MAX_CATEGORY_NAME_LENGTH = 255;
->>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
 const MAX_CATEGORY_IMAGE_SIZE = 5 * 1024 * 1024;
 
 $errors = [];
@@ -25,11 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($name === '') {
         $errors[] = 'カテゴリ名を入力してください。';
     } elseif (mb_strlen($name) > MAX_CATEGORY_NAME_LENGTH) {
-<<<<<<< HEAD
         $errors[] = 'カテゴリ名は100文字以内で入力してください。';
-=======
-        $errors[] = 'カテゴリ名は255文字以内で入力してください。';
->>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
+        $errors[] = 'カテゴリ名は100文字以内で入力してください。';
     }
 
     $file = $_FILES['icon'] ?? null;
@@ -83,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Category::create($name, $iconUrl, $pdo);
             $pdo->commit();
 
-            header('Location: category_add.php?success=1');
+            header('Location: categories.php?success=created');
             exit;
         } catch (Throwable $e) {
             if ($pdo instanceof PDO && $pdo->inTransaction()) {
@@ -109,29 +103,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>カテゴリ追加 | OVERHAUL 管理画面</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand" href="index.php">OVERHAUL 管理画面</a>
-        <a class="btn btn-outline-light btn-sm" href="../index.php">サイトを見る</a>
-    </div>
-</nav>
-<main class="container py-5" style="max-width: 720px">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">カテゴリ追加</h1>
-        <a href="index.php" class="btn btn-outline-secondary btn-sm">管理メニュー</a>
-    </div>
-    <?php if (isset($_GET['success'])): ?>
-        <div class="alert alert-success">カテゴリを登録しました。</div>
-    <?php endif; ?>
+<?php
+$adminTitle = 'カテゴリ追加';
+$activeMenu = 'categories';
+$breadcrumbs = [
+    ['label' => 'カテゴリ管理', 'url' => 'categories.php'],
+    ['label' => 'カテゴリ追加'],
+];
+require __DIR__ . '/includes/header.php';
+?>
+<div class="admin-page-header"><div><h1>カテゴリ追加</h1><p class="text-muted mb-0">新しい商品分類を登録します。</p></div></div>
     <?php if ($errors): ?>
         <div class="alert alert-danger" role="alert">
             <?php foreach ($errors as $error): ?>
@@ -139,26 +120,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
+    <div class="admin-form-section">
             <form method="post" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label for="name" class="form-label">カテゴリ名 <span class="text-danger">*</span></label>
-<<<<<<< HEAD
                     <input type="text" class="form-control" id="name" name="name" maxlength="100" value="<?= h($name) ?>" required>
-=======
-                    <input type="text" class="form-control" id="name" name="name" maxlength="255" value="<?= h($name) ?>" required>
->>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
+                        <input type="text" class="form-control" id="name" name="name" maxlength="100" value="<?= h($name) ?>" required>
                 </div>
                 <div class="mb-4">
                     <label for="icon" class="form-label">カテゴリ画像</label>
                     <input type="file" class="form-control" id="icon" name="icon" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
                     <div class="form-text">JPG、PNG、WebP / 5MB以下。未指定でも登録できます。</div>
                 </div>
-                <button type="submit" class="btn btn-primary">追加する</button>
+                <div class="d-flex justify-content-between mt-4"><a href="categories.php" class="btn btn-outline-secondary">キャンセル</a><button type="submit" class="btn btn-primary">追加する</button></div>
             </form>
-        </div>
     </div>
-</main>
-</body>
-</html>
+<?php require __DIR__ . '/includes/footer.php'; ?>

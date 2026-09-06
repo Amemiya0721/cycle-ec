@@ -23,10 +23,21 @@ class User
     public static function findByEmail(string $email): ?array
     {
         $stmt = Database::getConnection()->prepare(
-            'SELECT user_id, name, email, password, created_at, updated_at
+            'SELECT user_id, name, email, password, is_admin, created_at, updated_at
              FROM users WHERE email = :email LIMIT 1'
         );
         $stmt->execute([':email' => $email]);
+        $user = $stmt->fetch();
+        return $user === false ? null : $user;
+    }
+
+    public static function findById(int $userId): ?array
+    {
+        $stmt = Database::getConnection()->prepare(
+            'SELECT user_id, name, email, password, is_admin, created_at, updated_at
+             FROM users WHERE user_id = :user_id LIMIT 1'
+        );
+        $stmt->execute([':user_id' => $userId]);
         $user = $stmt->fetch();
         return $user === false ? null : $user;
     }

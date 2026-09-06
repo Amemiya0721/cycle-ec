@@ -8,6 +8,7 @@ $pageCss = 'products.css';
 
 require_once __DIR__ . '/../../src/Product.php';
 require_once __DIR__ . '/../../src/Category.php';
+$productConditions = require __DIR__ . '/../../config/product_conditions.php';
 
 
 /**
@@ -32,17 +33,30 @@ require_once __DIR__ . '/../../src/Category.php';
 |--------------------------------------------------------------------------
 */
 
-$category = isset($_GET['category'])
-    ? trim((string) $_GET['category'])
+$category = isset($_GET['category']) && is_string($_GET['category'])
+    ? trim($_GET['category'])
     : null;
 
-$keyword = isset($_GET['keyword'])
-    ? trim((string) $_GET['keyword'])
+$keyword = isset($_GET['keyword']) && is_string($_GET['keyword'])
+    ? trim($_GET['keyword'])
     : null;
 
-$sort = isset($_GET['sort'])
-    ? trim((string) $_GET['sort'])
+$sort = isset($_GET['sort']) && is_string($_GET['sort'])
+    ? trim($_GET['sort'])
     : null;
+
+$selectedConditions = [];
+if (isset($_GET['condition'])) {
+    $conditionInput = is_array($_GET['condition'])
+        ? $_GET['condition']
+        : [$_GET['condition']];
+    foreach ($conditionInput as $conditionValue) {
+        if (is_string($conditionValue) && array_key_exists($conditionValue, $productConditions)) {
+            $selectedConditions[] = $conditionValue;
+        }
+    }
+    $selectedConditions = array_values(array_unique($selectedConditions));
+}
 
 $page = isset($_GET['page'])
     ? (int) $_GET['page']
@@ -69,6 +83,10 @@ if ($sort !== null && $sort !== '') {
     $criteria['sort'] = $sort;
 }
 
+if ($selectedConditions) {
+    $criteria['conditions'] = $selectedConditions;
+}
+
 $criteria['page'] = max(1, $page);
 
 
@@ -89,10 +107,16 @@ $categories = Category::all();
 |--------------------------------------------------------------------------
 */
 
-function h(?string $value): string
+function scalarValue(mixed $value): string
+{
+    return is_scalar($value) ? (string) $value : '';
+}
+
+
+function h(mixed $value): string
 {
     return htmlspecialchars(
-        $value ?? '',
+        scalarValue($value),
         ENT_QUOTES,
         'UTF-8'
     );
@@ -139,11 +163,11 @@ function isSelectedCategory(
 
     return (
         $currentCategory
-        === (string) $category['category_id']
+        === scalarValue($category['category_id'] ?? null)
     )
     || (
         $currentCategory
-        === (string) $category['name']
+        === scalarValue($category['name'] ?? null)
     );
 }
 
@@ -151,8 +175,10 @@ function isSelectedCategory(
 function currentSort(?string $sort): string
 {
     return match ($sort) {
+        'condition'  => 'condition',
         'price_asc'  => 'price_asc',
         'price_desc' => 'price_desc',
+        'oldest'     => 'oldest',
         default      => 'newest',
     };
 }
@@ -213,19 +239,12 @@ require_once __DIR__ . '/../includes/nav.php';
                         <?php foreach ($categories as $cat): ?>
 
                             <option
-                                value="<?= h(
-                                    (string) $cat['name']
-                                ) ?>"
-                                <?= isSelectedCategory(
-                                    (string) ($category ?? ''),
-                                    $cat
-                                )
+                                value="<?= h($cat['name'] ?? null) ?>"
+                                <?= isSelectedCategory(scalarValue($category), $cat)
                                     ? 'selected'
                                     : '' ?>
                             >
-                                <?= h(
-                                    (string) $cat['name']
-                                ) ?>
+                                <?= h($cat['name'] ?? null) ?>
                             </option>
 
                         <?php endforeach; ?>
@@ -234,6 +253,20 @@ require_once __DIR__ . '/../includes/nav.php';
 
                 </div>
 
+
+                <!-- キーワード -->
+
+                <fieldset class="search-field search-field--condition">
+                    <legend>コンディション</legend>
+                    <div class="condition-options">
+                        <?php foreach ($productConditions as $conditionValue => $condition): ?>
+                            <label class="condition-option">
+                                <input type="checkbox" name="condition[]" value="<?= h($conditionValue) ?>" <?= in_array($conditionValue, $selectedConditions, true) ? 'checked' : '' ?> >
+                                <span><?= h($condition['label'] ?? $conditionValue) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
 
                 <!-- キーワード -->
 
@@ -274,12 +307,30 @@ require_once __DIR__ . '/../includes/nav.php';
                     >
 
                         <option
+                            value="condition"
+                            <?= $currentSort === 'condition'
+                                ? 'selected'
+                                : '' ?>
+                        >
+                            コンディション順
+                        </option>
+
+                        <option
                             value="newest"
                             <?= $currentSort === 'newest'
                                 ? 'selected'
                                 : '' ?>
                         >
                             新着順
+                        </option>
+
+                        <option
+                            value="oldest"
+                            <?= $currentSort === 'oldest'
+                                ? 'selected'
+                                : '' ?>
+                        >
+                            古い順
                         </option>
 
                         <option

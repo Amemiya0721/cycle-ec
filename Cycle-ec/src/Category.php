@@ -59,6 +59,22 @@ class Category
         return $stmt->fetchAll();
     }
 
+    public static function allWithProductCounts(): array
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->query(
+            'SELECT c.category_id, c.name, c.icon_url,
+                    COUNT(p.product_id) AS product_count
+             FROM categories c
+             LEFT JOIN products p
+               ON p.category_id = c.category_id
+              AND p.is_deleted = 0
+             GROUP BY c.category_id, c.name, c.icon_url
+             ORDER BY c.category_id ASC'
+        );
+        return $stmt->fetchAll();
+    }
+
     public static function create(string $name, ?string $iconUrl = null, ?PDO $pdo = null): int
     {
         $pdo ??= Database::getConnection();
@@ -74,7 +90,6 @@ class Category
         return (int) $pdo->lastInsertId();
     }
 
-<<<<<<< HEAD
     public static function findById(int $categoryId): ?array
     {
         $pdo = Database::getConnection();
@@ -115,8 +130,6 @@ class Category
         return $stmt->rowCount() > 0;
     }
 
-=======
->>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
     /** @return array<string, string> slug => カテゴリ名 */
     private static function slugMap(): array
     {

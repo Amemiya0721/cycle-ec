@@ -9,6 +9,8 @@
 require_once __DIR__ . '/../../../src/Database.php';
 require_once __DIR__ . '/../../../src/Product.php';
 require_once __DIR__ . '/../../../src/Category.php';
+require_once __DIR__ . '/../includes/auth.php';
+$productConditions = require __DIR__ . '/../../../config/product_conditions.php';
 
 try {
     $pdo = Database::getConnection();
@@ -25,6 +27,7 @@ $price            = $_POST['price'] ?? '';
 $taxRate          = $_POST['tax_rate'] ?? '10';
 $status            = $_POST['status'] ?? '';
 $productCondition = $_POST['product_condition'] ?? '';
+$isRecommended    = isset($_POST['is_recommended']);
 $categories = Category::all();
 
 
@@ -62,6 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($productCondition === '') {
         $errors[] = '商品の状態を選択してください。';
+    } elseif (!array_key_exists($productCondition, $productConditions)) {
+        $errors[] = '商品の状態を正しく選択してください。';
     }
 
 
@@ -127,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'tax_rate' => $taxRate,
                 'status' => $status,
                 'product_condition' => $productCondition,
+                'is_recommended' => $isRecommended,
             ]);
 
 
@@ -254,34 +260,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 ?>
-
-<!DOCTYPE html>
-<html lang="ja">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-    >
-
-    <title>商品追加 | OVERHAUL 管理画面</title>
-
-
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
-
-</head>
-
-
-<body class="bg-light">
-
-
-<div class="container py-5">
+<?php
+$adminTitle = '商品追加';
+$activeMenu = 'products';
+$breadcrumbs = [
+    ['label' => '商品管理', 'url' => 'index.php'],
+    ['label' => '商品追加'],
+];
+require __DIR__ . '/../includes/header.php';
+?>
+<div class="container-fluid px-0">
 
 
     <!-- ============================= -->
@@ -392,6 +380,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     </select>
 
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="is_recommended" id="is_recommended" <?= $isRecommended ? 'checked' : '' ?> >
+                    <label class="form-check-label" for="is_recommended">おすすめ商品として表示する</label>
                 </div>
 
 
@@ -620,33 +613,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             選択してください
                         </option>
 
-                        <option value="新品"
-                            <?= ($productCondition ?? '') === '新品'
-                                ? 'selected'
-                                : '' ?>>
-                            新品
-                        </option>
-
-                        <option value="美品"
-                            <?= ($productCondition ?? '') === '美品'
-                                ? 'selected'
-                                : '' ?>>
-                            美品
-                        </option>
-
-                        <option value="中古"
-                            <?= ($productCondition ?? '') === '中古'
-                                ? 'selected'
-                                : '' ?>>
-                            中古
-                        </option>
-
-                        <option value="ジャンク"
-                            <?= ($productCondition ?? '') === 'ジャンク'
-                                ? 'selected'
-                                : '' ?>>
-                            ジャンク
-                        </option>
+                        <?php foreach ($productConditions as $conditionValue => $condition): ?>
+                            <option value="<?= htmlspecialchars($conditionValue, ENT_QUOTES, 'UTF-8') ?>" <?= $productCondition === $conditionValue ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) $condition['label'], ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
 
                     </select>
 
@@ -723,11 +694,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-</script>
-
-
-</body>
-
-</html>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

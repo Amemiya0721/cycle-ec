@@ -1,3 +1,12 @@
+    <?php
+    require_once __DIR__ . '/../../src/Category.php';
+    $footerCategories = [];
+    try {
+        $footerCategories = Category::all();
+    } catch (Throwable $exception) {
+        error_log('Footer category loading failed: ' . $exception->getMessage());
+    }
+    ?>
     <!-- FOOTER -->
     <footer>
         <div class="container">
@@ -16,12 +25,9 @@
                     <h5>商品を探す</h5>
                     <ul class="list-unstyled">
                         <li><a href="<?= $baseUrl ?>pages/products.php">商品一覧</a></li>
-                        <li><a href="<?= $baseUrl ?>pages/products.php?category=road">ロードバイク</a></li>
-                        <li><a href="<?= $baseUrl ?>pages/products.php?category=wheel">ホイール</a></li>
-                        <li><a href="<?= $baseUrl ?>pages/products.php?category=component">コンポーネント</a></li>
-                        <li><a href="<?= $baseUrl ?>pages/products.php?category=parts">パーツ</a></li>
-                        <li><a href="<?= $baseUrl ?>pages/products.php?category=wear">ウェア・用品</a></li>
-                        <li><a href="<?= $baseUrl ?>pages/products.php?category=junk">ジャンク倉庫</a></li>
+                        <?php foreach ($footerCategories as $category): ?>
+                            <li><a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>"><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></a></li>
+                        <?php endforeach; ?>
                     </ul>
                 </div>
                 <div class="col-6 col-lg-2 footer-col">

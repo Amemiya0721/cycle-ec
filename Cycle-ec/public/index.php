@@ -5,16 +5,24 @@ $config = require __DIR__ . '/../config/config.php';
 $baseUrl = $config['app']['base_url'];
 
 require_once __DIR__ . '/../src/Category.php';
-<<<<<<< HEAD
+require_once __DIR__ . '/../src/Product.php';
 $categories = [];
+$recommendedProducts = [];
+$newProducts = [];
+$priceReducedProducts = [];
 try {
     $categories = Category::all();
+    $recommendedProducts = Product::recommended(5);
+    $newProducts = Product::search(['sort' => 'newest', 'page' => 1])['items'];
+    $priceReducedProducts = Product::priceReduced(5);
 } catch (Throwable $e) {
     error_log('Top page category loading failed: ' . $e->getMessage());
 }
-=======
-$categories = Category::all();
->>>>>>> 8872c298aa043837eaeb77e944cc9950d5e3ba81
+
+function h(?string $value): string
+{
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
 
 $pageCss = 'index.css';
 
@@ -63,27 +71,6 @@ require_once __DIR__ . '/includes/nav.php';
 </section>
 
 
-<!-- NEWS -->
-<div class="news-bar">
-    <div class="container d-flex align-items-center gap-3">
-
-        <span class="news-label">NEWS</span>
-
-        <span class="news-text flex-grow-1">
-            <span class="news-date">2026.08.20</span>
-            新着商品を15点追加しました！
-        </span>
-
-        <a
-            href="<?= $baseUrl ?>pages/products.php?sort=newest"
-            class="more-link"
-            id="news-more">
-            一覧を見る &gt;
-        </a>
-
-    </div>
-</div>
-
 <!-- RECOMMEND -->
 <section id="recommend">
 
@@ -107,203 +94,29 @@ require_once __DIR__ . '/includes/nav.php';
 
         <!-- SWIPER -->
         <div class="swiper recommend-swiper">
-
             <div class="swiper-wrapper">
-
-                <!-- CARD 1 -->
-                <div class="swiper-slide">
-
-                    <a href="<?= $baseUrl ?>pages/products.php?category=road" class="product-card">
-
-                        <div class="product-image">
-
-                            <span class="product-badge">
-                                PICK UP
-                            </span>
-
-                            <img
-                                src="<?= $baseUrl ?>uploads/products/sample1.jpg"
-                                alt="Cannondale CAAD13"
-                            >
-
-                        </div>
-
-                        <div class="product-info">
-
-                            <div class="product-category">
-                                ROAD BIKE
+                <?php foreach ($recommendedProducts as $product): ?>
+                    <div class="swiper-slide">
+                        <a href="<?= $baseUrl ?>pages/product-detail.php?id=<?= (int) $product['product_id'] ?>" class="product-card">
+                            <div class="product-image">
+                                <span class="product-badge">PICK UP</span>
+                                <?php if (!empty($product['image_url'])): ?>
+                                    <img src="<?= h((string) $product['image_url']) ?>" alt="<?= h((string) $product['name']) ?>">
+                                <?php else: ?>
+                                    <div class="d-flex align-items-center justify-content-center h-100 text-muted">画像なし</div>
+                                <?php endif; ?>
                             </div>
-
-                            <h3 class="product-name">
-                                Cannondale CAAD13 Disc 105
-                            </h3>
-
-                            <div class="product-price">
-                                ¥120,000
+                            <div class="product-info">
+                                <div class="product-category"><?= h((string) $product['category_name']) ?></div>
+                                <h3 class="product-name"><?= h((string) $product['name']) ?></h3>
+                                <div class="product-price">¥<?= number_format((float) $product['price']) ?></div>
                             </div>
-
-                        </div>
-
-                    </a>
-
-                </div>
-
-
-                <!-- CARD 2 -->
-                <div class="swiper-slide">
-
-                    <a href="<?= $baseUrl ?>pages/products.php?category=component" class="product-card">
-
-                        <div class="product-image">
-
-                            <span class="product-badge">
-                                PICK UP
-                            </span>
-
-                            <img
-                                src="<?= $baseUrl ?>uploads/products/sample2.jpg"
-                                alt="Shimano Ultegra R8000"
-                            >
-
-                        </div>
-
-                        <div class="product-info">
-
-                            <div class="product-category">
-                                COMPONENT
-                            </div>
-
-                            <h3 class="product-name">
-                                Shimano ULTEGRA R8000 Groupset
-                            </h3>
-
-                            <div class="product-price">
-                                ¥35,000
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                </div>
-
-
-                <!-- CARD 3 -->
-                <div class="swiper-slide">
-
-                    <a href="<?= $baseUrl ?>pages/products.php?category=wheel" class="product-card">
-
-                        <div class="product-image">
-
-                            <span class="product-badge">
-                                PICK UP
-                            </span>
-
-                            <img
-                                src="<?= $baseUrl ?>uploads/products/sample3.jpg"
-                                alt="Carbon Wheel"
-                            >
-
-                        </div>
-
-                        <div class="product-info">
-
-                            <div class="product-category">
-                                WHEEL
-                            </div>
-
-                            <h3 class="product-name">
-                                Carbon Aero Wheel 50mm
-                            </h3>
-
-                            <div class="product-price">
-                                ¥48,000
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                </div>
-
-
-                <!-- CARD 4 -->
-                <div class="swiper-slide">
-
-                    <a href="<?= $baseUrl ?>pages/products.php?category=parts" class="product-card">
-
-                        <div class="product-image">
-
-                            <span class="product-badge">
-                                PICK UP
-                            </span>
-
-                            <img
-                                src="<?= $baseUrl ?>uploads/products/sample4.jpg"
-                                alt="Selle Italia Saddle"
-                            >
-
-                        </div>
-
-                        <div class="product-info">
-
-                            <div class="product-category">
-                                PARTS
-                            </div>
-
-                            <h3 class="product-name">
-                                Selle Italia Carbon Saddle
-                            </h3>
-
-                            <div class="product-price">
-                                ¥12,000
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                </div>
-
-
-                <!-- CARD 5 -->
-                <div class="swiper-slide">
-
-                    <a href="<?= $baseUrl ?>pages/products.php?category=component" class="product-card">
-
-                        <div class="product-image">
-
-                            <span class="product-badge">
-                                PICK UP
-                            </span>
-
-                            <img
-                                src="<?= $baseUrl ?>uploads/products/sample5.jpg"
-                                alt="Shimano Dura Ace"
-                            >
-
-                        </div>
-
-                        <div class="product-info">
-
-                            <div class="product-category">
-                                COMPONENT
-                            </div>
-
-                            <h3 class="product-name">
-                                Shimano DURA-ACE R9100
-                            </h3>
-
-                            <div class="product-price">
-                                ¥42,000
-                            </div>
-
-                        </div>
-
-                    </a>
-
-                </div>
-
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+                <?php if (!$recommendedProducts): ?>
+                    <div class="swiper-slide"><p class="text-muted py-4">おすすめ商品は準備中です。</p></div>
+                <?php endif; ?>
             </div>
 
 
@@ -375,9 +188,20 @@ require_once __DIR__ . '/includes/nav.php';
 
         </div>
 
-        <div
-            class="row g-3"
-            id="new-grid"></div>
+        <div class="row g-3" id="new-grid">
+            <?php foreach ($newProducts as $product): ?>
+                <div class="col-6 col-md-4 col-lg">
+                    <a href="<?= $baseUrl ?>pages/product-detail.php?id=<?= (int) $product['product_id'] ?>" class="prod-card">
+                        <div class="prod-thumb">
+                            <span class="badge-new">NEW</span>
+                            <?php if (!empty($product['image_url'])): ?><img class="prod-image" src="<?= h($product['image_url']) ?>" alt="<?= h($product['name']) ?>"><?php else: ?><span class="thumb-icon">画像なし</span><?php endif; ?>
+                        </div>
+                        <div class="prod-info"><div class="prod-name"><?= h($product['name']) ?></div><div class="prod-price">¥<?= number_format((float) $product['price']) ?><span class="tax">税込</span></div></div>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+            <?php if (!$newProducts): ?><p class="text-muted">商品はまだありません。</p><?php endif; ?>
+        </div>
 
     </div>
 </section>
@@ -399,9 +223,21 @@ require_once __DIR__ . '/includes/nav.php';
 
         </div>
 
-        <div
-            class="row g-3"
-            id="down-grid"></div>
+        <div class="row g-3" id="down-grid">
+            <?php foreach ($priceReducedProducts as $product): ?>
+                <?php $discountRate = (int) round((1 - ((float) $product['price'] / (float) $product['old_price'])) * 100); ?>
+                <div class="col-6 col-md-4 col-lg">
+                    <a href="<?= $baseUrl ?>pages/product-detail.php?id=<?= (int) $product['product_id'] ?>" class="prod-card">
+                        <div class="prod-thumb">
+                            <span class="badge-down">PRICE DOWN</span><span class="off-badge"><?= $discountRate ?>%<br>OFF</span>
+                            <?php if (!empty($product['image_url'])): ?><img class="prod-image" src="<?= h($product['image_url']) ?>" alt="<?= h($product['name']) ?>"><?php else: ?><span class="thumb-icon">画像なし</span><?php endif; ?>
+                        </div>
+                        <div class="prod-info"><div class="prod-name"><?= h($product['name']) ?></div><div><span class="price-old">¥<?= number_format((float) $product['old_price']) ?></span><span class="price-new">¥<?= number_format((float) $product['price']) ?></span><span class="tax">税込</span></div></div>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+            <?php if (!$priceReducedProducts): ?><p class="text-muted">値下げ商品はありません。</p><?php endif; ?>
+        </div>
 
     </div>
 </section>

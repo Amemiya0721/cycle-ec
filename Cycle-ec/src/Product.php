@@ -48,6 +48,7 @@ class Product
                 p.status,
                 p.product_condition,
                 p.is_deleted,
+                p.is_recommended,
                 p.created_at,
                 p.updated_at,
                 c.name AS category_name
@@ -82,10 +83,10 @@ class Product
         $stmt = $pdo->prepare(
             'INSERT INTO products
                 (category_id, name, description, price, tax_rate, status,
-                 product_condition, is_deleted)
+                 product_condition, is_deleted, is_recommended)
              VALUES
                 (:category_id, :name, :description, :price, :tax_rate, :status,
-                 :product_condition, 0)'
+                 :product_condition, 0, :is_recommended)'
         );
         $stmt->execute([
             ':category_id' => $data['category_id'],
@@ -95,6 +96,7 @@ class Product
             ':tax_rate' => $data['tax_rate'],
             ':status' => $data['status'],
             ':product_condition' => $data['product_condition'],
+            ':is_recommended' => !empty($data['is_recommended']) ? 1 : 0,
         ]);
 
         return (int) $pdo->lastInsertId();
@@ -111,7 +113,8 @@ class Product
                  price = :price,
                  tax_rate = :tax_rate,
                  status = :status,
-                 product_condition = :product_condition
+                 product_condition = :product_condition,
+                 is_recommended = :is_recommended
              WHERE product_id = :product_id
                AND is_deleted = 0'
         );
@@ -125,8 +128,58 @@ class Product
             ':tax_rate' => $data['tax_rate'],
             ':status' => $data['status'],
             ':product_condition' => $data['product_condition'],
+                        ':is_recommended' => !empty($data['is_recommended']) ? 1 : 0,
         ]);
     }
+
+        public static function recommended(int $limit = 5): array
+        {
+                $limit = max(1, min($limit, 20));
+                $pdo = Database::getConnection();
+                $stmt = $pdo->prepare(
+                        'SELECT p.product_id, p.name, p.price, c.name AS category_name,
+                                        pi.image_url
+                         FROM products p
+                         INNER JOIN categories c ON c.category_id = p.category_id
+                         LEFT JOIN product_images pi
+                             ON pi.product_id = p.product_id AND pi.sort_order = 1
+                         WHERE p.is_deleted = 0
+                             AND p.is_recommended = 1
+                         ORDER BY p.updated_at DESC, p.product_id DESC
+                         LIMIT :limit'
+                );
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll();
+        }
+
+        public static function priceReduced(int $limit = 5): array
+        {
+                $limit = max(1, min($limit, 20));
+                $pdo = Database::getConnection();
+                $stmt = $pdo->prepare(
+                        'SELECT p.product_id, p.name, p.price, c.name AS category_name,
+                                        pi.image_url, ph.price AS old_price
+                         FROM products p
+                         INNER JOIN categories c ON c.category_id = p.category_id
+                         LEFT JOIN product_images pi
+                             ON pi.product_id = p.product_id AND pi.sort_order = 1
+                         INNER JOIN product_price_history ph
+                             ON ph.product_id = p.product_id
+                            AND ph.created_at = (
+                                    SELECT MAX(ph2.created_at)
+                                    FROM product_price_history ph2
+                                    WHERE ph2.product_id = p.product_id
+                            )
+                         WHERE p.is_deleted = 0
+                             AND ph.price > p.price
+                         ORDER BY (ph.price - p.price) DESC, p.updated_at DESC
+                         LIMIT :limit'
+                );
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll();
+        }
 
     public static function delete(int $productId): bool
     {
@@ -179,7 +232,9 @@ class Product
      * 外部入力を直接 ORDER BY に渡さない。
      */
     private const SORT_MAP = [
+        'condition'  => "CASE p.product_condition WHEN 'S' THEN 1 WHEN 'A' THEN 2 WHEN 'B' THEN 3 WHEN 'C' THEN 4 WHEN 'JUNK' THEN 5 WHEN '新品' THEN 1 WHEN '美品' THEN 2 WHEN '中古' THEN 3 WHEN 'ジャンク' THEN 5 ELSE 6 END ASC, p.updated_at DESC",
         'newest'     => 'p.created_at DESC',
+        'oldest'     => 'p.created_at ASC',
         'price_asc'  => 'p.price ASC',
         'price_desc' => 'p.price DESC',
     ];
@@ -414,6 +469,30 @@ class Product
                     'p.category_id = :category_id';
 
                 $params[':category_id'] = $categoryId;
+            }
+        }
+
+        $status = $criteria['status'] ?? null;
+        if (is_string($status) && trim($status) !== '') {
+            $conditions[] = 'p.status = :status';
+            $params[':status'] = trim($status);
+        }
+
+        $selectedConditions = $criteria['conditions'] ?? [];
+        if (is_array($selectedConditions)) {
+            $selectedConditions = array_values(array_filter(
+                $selectedConditions,
+                static fn ($value): bool => is_string($value)
+                    && in_array($value, ['S', 'A', 'B', 'C', 'JUNK'], true)
+            ));
+            if ($selectedConditions) {
+                $placeholders = [];
+                foreach ($selectedConditions as $index => $conditionValue) {
+                    $placeholder = ':condition_' . $index;
+                    $placeholders[] = $placeholder;
+                    $params[$placeholder] = $conditionValue;
+                }
+                $conditions[] = 'p.product_condition IN (' . implode(', ', $placeholders) . ')';
             }
         }
 

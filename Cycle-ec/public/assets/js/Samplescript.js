@@ -49,6 +49,9 @@ function renderCategories() {
 
 function renderNew() {
   const grid = document.getElementById('new-grid');
+  if (grid.children.length > 0) {
+    return;
+  }
   grid.innerHTML = NEW_PRODUCTS.map(p => `
     <div class="col-6 col-md-4 col-lg">
       <a href="pages/products.php?keyword=${encodeURIComponent(p.name)}" class="prod-card" data-cat="${p.cat}">
@@ -67,6 +70,9 @@ function renderNew() {
 
 function renderDown() {
   const grid = document.getElementById('down-grid');
+  if (grid.children.length > 0) {
+    return;
+  }
   grid.innerHTML = DOWN_PRODUCTS.map(p => {
     const off = Math.round((1 - p.price / p.old) * 100);
     return `

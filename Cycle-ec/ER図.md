@@ -20,6 +20,7 @@ erDiagram
         varchar password
         datetime created_at
         datetime updated_at
+        is_admin tinyint(1)
     }
 
     USER_ADDRESSES {
@@ -56,6 +57,7 @@ erDiagram
         boolean is_deleted
         datetime created_at
         datetime updated_at
+        is_recommended tinyint(1)
     }
 
     PRODUCT_IMAGES {

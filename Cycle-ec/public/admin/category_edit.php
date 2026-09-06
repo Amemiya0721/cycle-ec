@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../src/Database.php';
 require_once __DIR__ . '/../../src/Category.php';
+require_once __DIR__ . '/includes/auth.php';
 
 const MAX_CATEGORY_NAME_LENGTH = 100;
 const MAX_CATEGORY_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -116,19 +117,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>カテゴリ編集 | OVERHAUL 管理画面</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<nav class="navbar navbar-dark bg-dark"><div class="container"><a class="navbar-brand" href="categories.php">カテゴリ管理</a><a class="btn btn-outline-light btn-sm" href="../index.php">サイトを見る</a></div></nav>
-<main class="container py-4" style="max-width:720px">
-    <div class="card shadow-sm"><div class="card-body p-4">
-        <h1 class="h3 mb-4">カテゴリ編集</h1>
+<?php
+$adminTitle = 'カテゴリ編集';
+$activeMenu = 'categories';
+$breadcrumbs = [
+    ['label' => 'カテゴリ管理', 'url' => 'categories.php'],
+    ['label' => 'カテゴリ編集'],
+];
+require __DIR__ . '/includes/header.php';
+?>
+<div class="admin-page-header"><div><h1>カテゴリ編集</h1><p class="text-muted mb-0">カテゴリ情報を更新します。</p></div></div>
+    <div class="admin-form-section">
         <?php foreach ($errors as $error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endforeach; ?>
         <form method="post" enctype="multipart/form-data">
             <input type="hidden" name="category_id" value="<?= (int) $categoryId ?>">
@@ -137,7 +136,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if ($oldIconUrl !== ''): ?><div class="mb-3"><img src="<?= h($oldIconUrl) ?>" alt="現在のカテゴリ画像" style="max-width:180px;max-height:180px;object-fit:cover"><div class="form-check mt-2"><input class="form-check-input" type="checkbox" name="remove_icon" id="remove_icon"><label class="form-check-label" for="remove_icon">現在の画像を削除する</label></div></div><?php endif; ?>
             <div class="d-flex justify-content-between"><a class="btn btn-outline-secondary" href="categories.php">戻る</a><button class="btn btn-primary" type="submit">保存する</button></div>
         </form>
-    </div></div>
-</main>
-</body>
-</html>
+            </div>
+        <?php require __DIR__ . '/includes/footer.php'; ?>
