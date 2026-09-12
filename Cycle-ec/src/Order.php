@@ -79,7 +79,7 @@ class Order
             );
             foreach ($items as $item) {
                 $soldStmt->execute([
-                    ':sold_status' => 'SOLD',
+                    ':sold_status' => '売切れ',
                     ':product_id' => $item['product_id'],
                 ]);
             }

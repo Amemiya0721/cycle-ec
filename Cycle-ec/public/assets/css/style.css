@@ -424,7 +424,8 @@ section+section {
 }
 
 .badge-new,
-.badge-down {
+.badge-down,
+.badge-sold {
   position: absolute;
   top: 8px;
   left: 8px;
@@ -443,6 +444,21 @@ section+section {
 
 .badge-down {
   background: var(--ink);
+}
+
+.badge-sold {
+  background: #666;
+}
+
+.status-sold {
+  display: inline-block;
+  margin: 0;
+  padding: 6px 10px;
+  color: #fff;
+  background: #666;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
 }
 
 .rank-badge {

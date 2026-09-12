@@ -1,2 +1,5 @@
 .env
 /vendor/
+
+# Ignore markdown files from git tracking
+*.md

@@ -77,10 +77,14 @@ require_once __DIR__ . '/../includes/nav.php';
                     <dt>商品状態</dt>
                     <dd><?= h((string) $product['product_condition']) ?></dd>
                 </dl>
-                <form method="post" action="cart.php">
-                    <input type="hidden" name="product_id" value="<?= (int) $product['product_id'] ?>">
-                    <button class="btn btn-primary" type="submit">カートに入れる</button>
-                </form>
+                <?php if (in_array((string) ($product['status'] ?? ''), ['売切れ', 'SOLD'], true)): ?>
+                    <p class="status-sold">SOLD</p>
+                <?php else: ?>
+                    <form method="post" action="cart.php">
+                        <input type="hidden" name="product_id" value="<?= (int) $product['product_id'] ?>">
+                        <button class="btn btn-primary" type="submit">カートに入れる</button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
     <?php endif; ?>

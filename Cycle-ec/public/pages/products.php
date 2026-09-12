@@ -458,6 +458,18 @@ require_once __DIR__ . '/../includes/nav.php';
 
 
                                     <?php if (
+                                        in_array(
+                                            (string) ($item['status'] ?? ''),
+                                            ['売切れ', 'SOLD'],
+                                            true
+                                        )
+                                    ): ?>
+
+                                        <span class="badge-sold">
+                                            SOLD
+                                        </span>
+
+                                    <?php elseif (
                                         !empty($item['status'])
                                         && $item['status']
                                             === 'new_arrival'
