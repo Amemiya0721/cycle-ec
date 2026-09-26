@@ -34,11 +34,11 @@
                     <h5>サポート</h5>
                     <ul class="list-unstyled">
                         <li><a href="<?= $baseUrl ?>pages/contact.php">お問い合わせ</a></li>
-                        <li><a href="#">配送について</a></li>
-                        <li><a href="#">返品・返金について</a></li>
-                        <li><a href="#">中古商品について</a></li>
-                        <li><a href="#">ジャンク品について</a></li>
-                        <li><a href="#">よくある質問</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/terms.php#shipping">配送について</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/terms.php#returns">返品・返金について</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/terms.php#used">中古商品について</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/terms.php#junk">ジャンク品について</a></li>
+                        <li><a href="<?= $baseUrl ?>pages/terms.php">利用規約</a></li>
                     </ul>
                 </div>
                 <div class="col-6 col-lg-2 footer-col">

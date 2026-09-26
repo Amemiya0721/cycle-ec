@@ -124,6 +124,12 @@ try {
           </a>
         </li>
 
+        <li>
+          <a href="<?= $baseUrl ?>pages/terms.php">
+            利用規約
+          </a>
+        </li>
+
       </ul>
 
     </nav>
@@ -230,6 +236,12 @@ try {
       <li>
         <a href="<?= $baseUrl ?>pages/contact.php">
           お問い合わせ
+        </a>
+      </li>
+
+      <li>
+        <a href="<?= $baseUrl ?>pages/terms.php">
+          利用規約
         </a>
       </li>
 
