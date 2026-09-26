@@ -41,12 +41,15 @@ class Product
             'SELECT
                 p.product_id,
                 p.category_id,
+                p.manufacturer,
                 p.name,
                 p.description,
                 p.price,
                 p.tax_rate,
                 p.status,
                 p.product_condition,
+                p.stock_quantity,
+                p.staff_comment,
                 p.is_deleted,
                 p.is_recommended,
                 p.created_at,
@@ -65,16 +68,102 @@ class Product
             return null;
         }
 
+        // メイン画像（従来通り。image_type='main' のみ、既存データは全てこちらに分類される）
         $imageStmt = $pdo->prepare(
-            'SELECT image_id, product_id, image_url, sort_order, created_at
+            'SELECT image_id, product_id, image_url, image_type, sort_order, created_at
              FROM product_images
              WHERE product_id = :product_id
+               AND image_type = :image_type
              ORDER BY sort_order ASC, image_id ASC'
         );
-        $imageStmt->execute([':product_id' => $productId]);
+        $imageStmt->execute([':product_id' => $productId, ':image_type' => 'main']);
         $product['images'] = $imageStmt->fetchAll();
 
+        // 傷・使用感の写真（商品状態タブ用）
+        $conditionImageStmt = $pdo->prepare(
+            'SELECT image_id, product_id, image_url, image_type, sort_order, created_at
+             FROM product_images
+             WHERE product_id = :product_id
+               AND image_type = :image_type
+             ORDER BY sort_order ASC, image_id ASC'
+        );
+        $conditionImageStmt->execute([':product_id' => $productId, ':image_type' => 'condition']);
+        $product['condition_images'] = $conditionImageStmt->fetchAll();
+
+        $product['specs'] = self::specs($productId);
+        $product['accessories'] = self::accessories($productId);
+
         return $product;
+    }
+
+    /**
+     * 商品スペック一覧（モデル・年式・サイズ 等のkey-value）を取得する。
+     *
+     * @return array<int, array{spec_key:string, spec_value:string}>
+     */
+    public static function specs(int $productId): array
+    {
+        $stmt = Database::getConnection()->prepare(
+            'SELECT spec_key, spec_value
+             FROM product_specs
+             WHERE product_id = :product_id
+             ORDER BY sort_order ASC, spec_id ASC'
+        );
+        $stmt->execute([':product_id' => $productId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * 付属品一覧を取得する。
+     *
+     * @return array<int, array{content:string}>
+     */
+    public static function accessories(int $productId): array
+    {
+        $stmt = Database::getConnection()->prepare(
+            'SELECT content
+             FROM product_accessories
+             WHERE product_id = :product_id
+             ORDER BY sort_order ASC, accessory_id ASC'
+        );
+        $stmt->execute([':product_id' => $productId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * 関連商品を取得する（同カテゴリの他商品。新しい順）。
+     *
+     * 一覧検索用の search() は条件構築が複雑なため、
+     * 関連商品専用のシンプルなクエリとして分離する
+     * （search() を流用すると余計な検索条件・ページングを
+     *   持ち込むことになり、かえって複雑になるため）。
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function relatedByCategory(int $productId, int $categoryId, int $limit = 8): array
+    {
+        $limit = max(1, min($limit, 20));
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare(
+            'SELECT p.product_id, p.name, p.price, c.name AS category_name,
+                    pi.image_url
+             FROM products p
+             INNER JOIN categories c ON c.category_id = p.category_id
+             LEFT JOIN product_images pi
+                 ON pi.product_id = p.product_id
+                AND pi.image_type = "main"
+                AND pi.sort_order = 1
+             WHERE p.is_deleted = 0
+               AND p.category_id = :category_id
+               AND p.product_id != :product_id
+             ORDER BY p.created_at DESC, p.product_id DESC
+             LIMIT :limit'
+        );
+        $stmt->bindValue(':category_id', $categoryId, PDO::PARAM_INT);
+        $stmt->bindValue(':product_id', $productId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
     public static function create(array $data): int
@@ -142,7 +231,7 @@ class Product
                          FROM products p
                          INNER JOIN categories c ON c.category_id = p.category_id
                          LEFT JOIN product_images pi
-                             ON pi.product_id = p.product_id AND pi.sort_order = 1
+                             ON pi.product_id = p.product_id AND pi.image_type = "main" AND pi.sort_order = 1
                          WHERE p.is_deleted = 0
                              AND p.is_recommended = 1
                          ORDER BY p.updated_at DESC, p.product_id DESC
@@ -163,7 +252,7 @@ class Product
                          FROM products p
                          INNER JOIN categories c ON c.category_id = p.category_id
                          LEFT JOIN product_images pi
-                             ON pi.product_id = p.product_id AND pi.sort_order = 1
+                             ON pi.product_id = p.product_id AND pi.image_type = "main" AND pi.sort_order = 1
                          INNER JOIN product_price_history ph
                              ON ph.product_id = p.product_id
                             AND ph.created_at = (
@@ -423,6 +512,7 @@ class Product
                 ON p.category_id = c.category_id
                 LEFT JOIN product_images pi
                 ON p.product_id = pi.product_id
+                AND pi.image_type = 'main'
                 AND pi.sort_order = 1
         WHERE {$whereSql}
         ORDER BY {$orderBy}
