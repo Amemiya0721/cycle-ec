@@ -61,19 +61,20 @@ require __DIR__ . '/../includes/header.php';
         <div class="col-auto"><button class="btn btn-outline-secondary" type="submit">検索</button></div>
     </form>
     <div class="admin-card bg-white"><div class="table-responsive"><table class="table admin-table table-hover align-middle mb-0">
-        <thead class="table-light"><tr><th>ID</th><th>商品名</th><th>カテゴリ</th><th>価格</th><th>状態</th><th></th></tr></thead>
+        <thead class="table-light"><tr><th>ID</th><th>商品名</th><th>メーカー</th><th>カテゴリ</th><th>価格</th><th>状態</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($result['items'] as $item): ?>
             <tr>
                 <td><?= (int) $item['product_id'] ?></td>
                 <td><?= h((string) $item['name']) ?></td>
+                <td><?= h((string) ($item['manufacturer'] ?? '')) ?></td>
                 <td><?= h((string) $item['category_name']) ?></td>
                 <td><?= number_format((float) $item['price']) ?>円</td>
                 <td><?= h((string) $item['status']) ?></td>
                 <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="product-images.php?id=<?= (int) $item['product_id'] ?>">画像</a> <a class="btn btn-sm btn-outline-secondary" href="product-price-history.php?id=<?= (int) $item['product_id'] ?>">価格履歴</a> <a class="btn btn-sm btn-outline-primary" href="product-edit.php?id=<?= (int) $item['product_id'] ?>">編集</a></td>
             </tr>
         <?php endforeach; ?>
-        <?php if (empty($result['items'])): ?><tr><td colspan="6" class="text-center py-4">商品がありません。</td></tr><?php endif; ?>
+        <?php if (empty($result['items'])): ?><tr><td colspan="7" class="text-center py-4">商品がありません。</td></tr><?php endif; ?>
         </tbody>
     </table></div></div>
     <?php if ($result['total_pages'] > 1): ?><nav class="mt-3"><ul class="pagination">

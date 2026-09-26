@@ -34,6 +34,73 @@ require_once __DIR__ . '/Category.php';
  */
 class Product
 {
+    /**
+     * 管理画面のテキストエリア入力（1行1項目、"キー:値"形式）をスペック配列に変換する。
+     * 例: "モデル:CAAD13\n年式:2024" → [['spec_key'=>'モデル','spec_value'=>'CAAD13'], ...]
+     * create.php / edit.php の両方で使うため重複実装を避けてここに集約する。
+     *
+     * @return array<int, array{spec_key:string, spec_value:string}>
+     */
+    public static function parseSpecLines(string $raw): array
+    {
+        $specs = [];
+        foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
+            $line = trim($line);
+            if ($line === '' || !str_contains($line, ':')) {
+                continue;
+            }
+            [$key, $value] = explode(':', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            if ($key === '' || $value === '') {
+                continue;
+            }
+            $specs[] = ['spec_key' => $key, 'spec_value' => $value];
+        }
+        return $specs;
+    }
+
+    /**
+     * 管理画面のテキストエリア入力（1行1項目）を付属品配列に変換する。
+     *
+     * @return array<int, string>
+     */
+    public static function parseAccessoryLines(string $raw): array
+    {
+        $accessories = [];
+        foreach (preg_split('/\r\n|\r|\n/', $raw) as $line) {
+            $line = trim($line);
+            if ($line !== '') {
+                $accessories[] = $line;
+            }
+        }
+        return $accessories;
+    }
+
+    /**
+     * スペック配列を編集フォーム表示用のテキストに変換する（parseSpecLinesの逆変換）。
+     */
+    public static function specsToLines(array $specs): string
+    {
+        $lines = [];
+        foreach ($specs as $spec) {
+            $lines[] = $spec['spec_key'] . ':' . $spec['spec_value'];
+        }
+        return implode("\n", $lines);
+    }
+
+    /**
+     * 付属品配列を編集フォーム表示用のテキストに変換する。
+     */
+    public static function accessoriesToLines(array $accessories): string
+    {
+        $lines = [];
+        foreach ($accessories as $accessory) {
+            $lines[] = $accessory['content'];
+        }
+        return implode("\n", $lines);
+    }
+
     public static function findById(int $productId): ?array
     {
         $pdo = Database::getConnection();
@@ -171,20 +238,23 @@ class Product
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare(
             'INSERT INTO products
-                (category_id, name, description, price, tax_rate, status,
-                 product_condition, is_deleted, is_recommended)
+                (category_id, manufacturer, name, description, price, tax_rate, status,
+                 product_condition, stock_quantity, staff_comment, is_deleted, is_recommended)
              VALUES
-                (:category_id, :name, :description, :price, :tax_rate, :status,
-                 :product_condition, 0, :is_recommended)'
+                (:category_id, :manufacturer, :name, :description, :price, :tax_rate, :status,
+                 :product_condition, :stock_quantity, :staff_comment, 0, :is_recommended)'
         );
         $stmt->execute([
             ':category_id' => $data['category_id'],
+            ':manufacturer' => $data['manufacturer'] ?? null,
             ':name' => $data['name'],
             ':description' => $data['description'] ?? null,
             ':price' => $data['price'],
             ':tax_rate' => $data['tax_rate'],
             ':status' => $data['status'],
             ':product_condition' => $data['product_condition'],
+            ':stock_quantity' => (int) ($data['stock_quantity'] ?? 0),
+            ':staff_comment' => $data['staff_comment'] ?? null,
             ':is_recommended' => !empty($data['is_recommended']) ? 1 : 0,
         ]);
 
@@ -197,12 +267,15 @@ class Product
         $stmt = $pdo->prepare(
             'UPDATE products
              SET category_id = :category_id,
+                 manufacturer = :manufacturer,
                  name = :name,
                  description = :description,
                  price = :price,
                  tax_rate = :tax_rate,
                  status = :status,
                  product_condition = :product_condition,
+                 stock_quantity = :stock_quantity,
+                 staff_comment = :staff_comment,
                  is_recommended = :is_recommended
              WHERE product_id = :product_id
                AND is_deleted = 0'
@@ -211,14 +284,109 @@ class Product
         return $stmt->execute([
             ':product_id' => $productId,
             ':category_id' => $data['category_id'],
+            ':manufacturer' => $data['manufacturer'] ?? null,
             ':name' => $data['name'],
             ':description' => $data['description'] ?? null,
             ':price' => $data['price'],
             ':tax_rate' => $data['tax_rate'],
             ':status' => $data['status'],
             ':product_condition' => $data['product_condition'],
-                        ':is_recommended' => !empty($data['is_recommended']) ? 1 : 0,
+            ':stock_quantity' => (int) ($data['stock_quantity'] ?? 0),
+            ':staff_comment' => $data['staff_comment'] ?? null,
+            ':is_recommended' => !empty($data['is_recommended']) ? 1 : 0,
         ]);
+    }
+
+    /**
+     * スペックを全件洗い替えする（既存分は削除してから登録し直す）。
+     *
+     * @param array<int, array{spec_key:string, spec_value:string}> $specs
+     */
+    public static function replaceSpecs(int $productId, array $specs, ?PDO $pdo = null): void
+    {
+        $pdo ??= Database::getConnection();
+
+        $deleteStmt = $pdo->prepare('DELETE FROM product_specs WHERE product_id = :product_id');
+        $deleteStmt->execute([':product_id' => $productId]);
+
+        if ($specs === []) {
+            return;
+        }
+
+        $insertStmt = $pdo->prepare(
+            'INSERT INTO product_specs (product_id, spec_key, spec_value, sort_order)
+             VALUES (:product_id, :spec_key, :spec_value, :sort_order)'
+        );
+        foreach (array_values($specs) as $index => $spec) {
+            $insertStmt->execute([
+                ':product_id' => $productId,
+                ':spec_key' => $spec['spec_key'],
+                ':spec_value' => $spec['spec_value'],
+                ':sort_order' => $index,
+            ]);
+        }
+    }
+
+    /**
+     * 付属品を全件洗い替えする。
+     *
+     * @param array<int, string> $accessories
+     */
+    public static function replaceAccessories(int $productId, array $accessories, ?PDO $pdo = null): void
+    {
+        $pdo ??= Database::getConnection();
+
+        $deleteStmt = $pdo->prepare('DELETE FROM product_accessories WHERE product_id = :product_id');
+        $deleteStmt->execute([':product_id' => $productId]);
+
+        if ($accessories === []) {
+            return;
+        }
+
+        $insertStmt = $pdo->prepare(
+            'INSERT INTO product_accessories (product_id, content, sort_order)
+             VALUES (:product_id, :content, :sort_order)'
+        );
+        foreach (array_values($accessories) as $index => $content) {
+            $insertStmt->execute([
+                ':product_id' => $productId,
+                ':content' => $content,
+                ':sort_order' => $index,
+            ]);
+        }
+    }
+
+    /**
+     * 画像を1件登録する（メイン画像 / 傷・使用感写真）。
+     *
+     * sort_order は image_type ごとに独立して管理する
+     * （メイン画像1枚目と傷写真1枚目が同じ sort_order=1 でも問題ない）。
+     */
+    public static function addImage(int $productId, string $imageUrl, string $imageType, int $sortOrder, ?PDO $pdo = null): int
+    {
+        $pdo ??= Database::getConnection();
+        $stmt = $pdo->prepare(
+            'INSERT INTO product_images (product_id, image_url, image_type, sort_order)
+             VALUES (:product_id, :image_url, :image_type, :sort_order)'
+        );
+        $stmt->execute([
+            ':product_id' => $productId,
+            ':image_url' => $imageUrl,
+            ':image_type' => $imageType,
+            ':sort_order' => $sortOrder,
+        ]);
+        return (int) $pdo->lastInsertId();
+    }
+
+    /**
+     * 画像を1件削除する（管理画面からの個別削除用）。
+     */
+    public static function deleteImage(int $imageId, int $productId): bool
+    {
+        $stmt = Database::getConnection()->prepare(
+            'DELETE FROM product_images WHERE image_id = :image_id AND product_id = :product_id'
+        );
+        return $stmt->execute([':image_id' => $imageId, ':product_id' => $productId]);
     }
 
         public static function recommended(int $limit = 5): array
@@ -496,6 +664,7 @@ class Product
     SELECT
         p.product_id,
         p.category_id,
+        p.manufacturer,
         p.name,
         p.description,
         p.price,

@@ -21,12 +21,17 @@ try {
 $errors = [];
 
 $categoryId       = $_POST['category_id'] ?? '';
+$manufacturer     = trim($_POST['manufacturer'] ?? '');
 $name             = trim($_POST['name'] ?? '');
 $description      = trim($_POST['description'] ?? '');
 $price            = $_POST['price'] ?? '';
 $taxRate          = $_POST['tax_rate'] ?? '10';
 $status            = $_POST['status'] ?? '';
 $productCondition = $_POST['product_condition'] ?? '';
+$stockQuantity    = $_POST['stock_quantity'] ?? '0';
+$staffComment     = trim($_POST['staff_comment'] ?? '');
+$specsRaw         = $_POST['specs_raw'] ?? '';
+$accessoriesRaw   = $_POST['accessories_raw'] ?? '';
 $isRecommended    = isset($_POST['is_recommended']);
 $categories = Category::all();
 
@@ -51,6 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = '商品名は255文字以内で入力してください。';
     }
 
+    if (mb_strlen($manufacturer) > 100) {
+        $errors[] = 'メーカー名は100文字以内で入力してください。';
+    }
+
     if ($price === '' || !is_numeric($price) || $price < 0) {
         $errors[] = '価格を正しく入力してください。';
     }
@@ -69,45 +78,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = '商品の状態を正しく選択してください。';
     }
 
+    if ($stockQuantity === '' || !ctype_digit((string) $stockQuantity)) {
+        $errors[] = '在庫数を正しく入力してください。';
+    }
+
 
     // ------------------------------------
-    // 画像バリデーション
+    // 画像バリデーション（メイン画像 / 傷・使用感写真）
     // ------------------------------------
 
-    if (isset($_FILES['images']) && !empty($_FILES['images']['name'][0])) {
+    $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    $maxFileSize = 5 * 1024 * 1024; // 5MB
 
-        $imageCount = count($_FILES['images']['name']);
-
-        if ($imageCount > 5) {
-            $errors[] = '商品画像は最大5枚まで登録できます。';
+    foreach (['images' => 'メイン', 'condition_images' => '傷・使用感'] as $fieldName => $label) {
+        if (!isset($_FILES[$fieldName]) || empty($_FILES[$fieldName]['name'][0])) {
+            continue;
         }
 
-        $allowedMimeTypes = [
-            'image/jpeg',
-            'image/png',
-            'image/webp'
-        ];
+        if (count($_FILES[$fieldName]['name']) > 5) {
+            $errors[] = "{$label}画像は最大5枚まで登録できます。";
+        }
 
-        $maxFileSize = 5 * 1024 * 1024; // 5MB
-
-
-        foreach ($_FILES['images']['tmp_name'] as $key => $tmpName) {
-
-            if ($_FILES['images']['error'][$key] !== UPLOAD_ERR_OK) {
-                $errors[] = '画像のアップロードに失敗しました。';
+        foreach ($_FILES[$fieldName]['tmp_name'] as $key => $tmpName) {
+            if ($_FILES[$fieldName]['error'][$key] !== UPLOAD_ERR_OK) {
+                $errors[] = "{$label}画像のアップロードに失敗しました。";
                 continue;
             }
-
-            // ファイルサイズ
-            if ($_FILES['images']['size'][$key] > $maxFileSize) {
-                $errors[] = '画像は1枚あたり5MB以下にしてください。';
+            if ($_FILES[$fieldName]['size'][$key] > $maxFileSize) {
+                $errors[] = "{$label}画像は1枚あたり5MB以下にしてください。";
             }
-
-            // MIMEタイプ
             $mimeType = mime_content_type($tmpName);
-
             if (!in_array($mimeType, $allowedMimeTypes, true)) {
-                $errors[] = 'JPG、PNG、WebP形式の画像のみアップロードできます。';
+                $errors[] = "{$label}画像はJPG、PNG、WebP形式のみアップロードできます。";
             }
         }
     }
@@ -123,111 +125,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->beginTransaction();
 
-
             $productId = Product::create([
                 'category_id' => (int) $categoryId,
+                'manufacturer' => $manufacturer !== '' ? $manufacturer : null,
                 'name' => $name,
                 'description' => $description,
                 'price' => $price,
                 'tax_rate' => $taxRate,
                 'status' => $status,
                 'product_condition' => $productCondition,
+                'stock_quantity' => (int) $stockQuantity,
+                'staff_comment' => $staffComment !== '' ? $staffComment : null,
                 'is_recommended' => $isRecommended,
             ]);
 
+            Product::replaceSpecs($productId, Product::parseSpecLines($specsRaw), $pdo);
+            Product::replaceAccessories($productId, Product::parseAccessoryLines($accessoriesRaw), $pdo);
 
             // --------------------------------
-            // 画像保存先
+            // 画像保存（メイン / 傷・使用感）
             // --------------------------------
 
             $uploadDir = __DIR__ . '/../../uploads/products/' . $productId;
 
-
-            if (
-                isset($_FILES['images']) &&
-                !empty($_FILES['images']['name'][0])
-            ) {
+            foreach (['images' => 'main', 'condition_images' => 'condition'] as $fieldName => $imageType) {
+                if (!isset($_FILES[$fieldName]) || empty($_FILES[$fieldName]['name'][0])) {
+                    continue;
+                }
 
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0755, true);
                 }
 
-
-                $imageSql = "
-                    INSERT INTO product_images (
-                        product_id,
-                        image_url,
-                        sort_order,
-                        created_at
-                    )
-                    VALUES (
-                        :product_id,
-                        :image_url,
-                        :sort_order,
-                        NOW()
-                    )
-                ";
-
-                $imageStmt = $pdo->prepare($imageSql);
-
-
                 $sortOrder = 1;
 
+                foreach ($_FILES[$fieldName]['tmp_name'] as $key => $tmpName) {
 
-                foreach ($_FILES['images']['tmp_name'] as $key => $tmpName) {
-
-                    if ($_FILES['images']['error'][$key] !== UPLOAD_ERR_OK) {
+                    if ($_FILES[$fieldName]['error'][$key] !== UPLOAD_ERR_OK) {
                         continue;
                     }
 
-
-                    // MIMEタイプから拡張子を決定
                     $mimeType = mime_content_type($tmpName);
-
-                    switch ($mimeType) {
-
-                        case 'image/jpeg':
-                            $extension = 'jpg';
-                            break;
-
-                        case 'image/png':
-                            $extension = 'png';
-                            break;
-
-                        case 'image/webp':
-                            $extension = 'webp';
-                            break;
-
-                        default:
-                            continue 2;
+                    $extension = match ($mimeType) {
+                        'image/jpeg' => 'jpg',
+                        'image/png' => 'png',
+                        'image/webp' => 'webp',
+                        default => null,
+                    };
+                    if ($extension === null) {
+                        continue;
                     }
 
-
-                    // ランダムなファイル名
                     $fileName = bin2hex(random_bytes(16)) . '.' . $extension;
-
                     $filePath = $uploadDir . '/' . $fileName;
 
-
-                    // ファイル保存
                     if (!move_uploaded_file($tmpName, $filePath)) {
                         throw new Exception('画像ファイルの保存に失敗しました。');
                     }
 
+                    $imageUrl = '/uploads/products/' . $productId . '/' . $fileName;
 
-                    // DBに保存するURL
-                    $imageUrl = '/uploads/products/'
-                              . $productId
-                              . '/'
-                              . $fileName;
-
-
-                    $imageStmt->execute([
-                        ':product_id' => $productId,
-                        ':image_url' => $imageUrl,
-                        ':sort_order' => $sortOrder
-                    ]);
-
+                    Product::addImage($productId, $imageUrl, $imageType, $sortOrder, $pdo);
 
                     $sortOrder++;
                 }
@@ -259,6 +217,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+function h(?string $value): string
+{
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
 ?>
 <?php
 $adminTitle = '商品追加';
@@ -271,427 +233,168 @@ require __DIR__ . '/../includes/header.php';
 ?>
 <div class="container-fluid px-0">
 
-
-    <!-- ============================= -->
-    <!-- ヘッダー -->
-    <!-- ============================= -->
-
     <div class="d-flex justify-content-between align-items-center mb-4">
-
         <div>
-
-            <h1 class="h3 mb-1">
-                商品追加
-            </h1>
-
-            <p class="text-muted mb-0">
-                商品情報を入力してください。
-            </p>
-
+            <h1 class="h3 mb-1">商品追加</h1>
+            <p class="text-muted mb-0">商品情報を入力してください。</p>
         </div>
-
-
-        <a
-            href="index.php"
-            class="btn btn-outline-secondary"
-        >
-            商品一覧へ戻る
-        </a>
-
+        <a href="index.php" class="btn btn-outline-secondary">商品一覧へ戻る</a>
     </div>
 
-
-    <!-- ============================= -->
-    <!-- エラー -->
-    <!-- ============================= -->
-
     <?php if (!empty($errors)): ?>
-
         <div class="alert alert-danger">
-
             <ul class="mb-0">
-
                 <?php foreach ($errors as $error): ?>
-
-                    <li>
-                        <?= htmlspecialchars(
-                            $error,
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
-                    </li>
-
+                    <li><?= h($error) ?></li>
                 <?php endforeach; ?>
-
             </ul>
-
         </div>
-
     <?php endif; ?>
 
-
-    <!-- ============================= -->
-    <!-- 商品追加フォーム -->
-    <!-- ============================= -->
-
     <div class="card shadow-sm">
-
         <div class="card-body p-4">
 
+            <form method="POST" enctype="multipart/form-data">
 
-            <form
-                method="POST"
-                enctype="multipart/form-data"
-            >
-
-
-                <!-- ===================== -->
                 <!-- カテゴリ -->
-                <!-- ===================== -->
-
                 <div class="mb-3">
-
-                    <label
-                        for="category_id"
-                        class="form-label"
-                    >
-                        カテゴリ
-                        <span class="text-danger">*</span>
-                    </label>
-
-
-                    <select
-                        name="category_id"
-                        id="category_id"
-                        class="form-select"
-                        required
-                    >
-
-                        <option value="">
-                            選択してください
-                        </option>
-
+                    <label for="category_id" class="form-label">カテゴリ <span class="text-danger">*</span></label>
+                    <select name="category_id" id="category_id" class="form-select" required>
+                        <option value="">選択してください</option>
                         <?php foreach ($categories as $category): ?>
-                            <option value="<?= (int) $category['category_id'] ?>"
-                                <?= (string) $categoryId === (string) $category['category_id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
+                            <option value="<?= (int) $category['category_id'] ?>" <?= (string) $categoryId === (string) $category['category_id'] ? 'selected' : '' ?>>
+                                <?= h((string) $category['name']) ?>
                             </option>
                         <?php endforeach; ?>
-
                     </select>
-
                 </div>
 
                 <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" name="is_recommended" id="is_recommended" <?= $isRecommended ? 'checked' : '' ?> >
+                    <input class="form-check-input" type="checkbox" name="is_recommended" id="is_recommended" <?= $isRecommended ? 'checked' : '' ?>>
                     <label class="form-check-label" for="is_recommended">おすすめ商品として表示する</label>
                 </div>
 
+                <!-- メーカー -->
+                <div class="mb-3">
+                    <label for="manufacturer" class="form-label">メーカー</label>
+                    <input type="text" name="manufacturer" id="manufacturer" class="form-control" maxlength="100"
+                        value="<?= h($manufacturer) ?>" placeholder="例：Cannondale">
+                </div>
 
-                <!-- ===================== -->
                 <!-- 商品名 -->
-                <!-- ===================== -->
-
                 <div class="mb-3">
-
-                    <label
-                        for="name"
-                        class="form-label"
-                    >
-                        商品名
-                        <span class="text-danger">*</span>
-                    </label>
-
-
-                    <input
-                        type="text"
-                        name="name"
-                        id="name"
-                        class="form-control"
-                        maxlength="255"
-                        value="<?= htmlspecialchars(
-                            $name ?? '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>"
-                        placeholder="例：Cannondale CAAD13 Disc 105"
-                        required
-                    >
-
+                    <label for="name" class="form-label">商品名 <span class="text-danger">*</span></label>
+                    <input type="text" name="name" id="name" class="form-control" maxlength="255"
+                        value="<?= h($name) ?>" placeholder="例：Cannondale CAAD13 Disc 105" required>
                 </div>
 
-
-                <!-- ===================== -->
                 <!-- 商品説明 -->
-                <!-- ===================== -->
-
                 <div class="mb-3">
-
-                    <label
-                        for="description"
-                        class="form-label"
-                    >
-                        商品説明
-                    </label>
-
-
-                    <textarea
-                        name="description"
-                        id="description"
-                        class="form-control"
-                        rows="6"
-                        placeholder="商品の詳細、使用状況、注意事項など"
-                    ><?= htmlspecialchars(
-                        $description ?? '',
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?></textarea>
-
+                    <label for="description" class="form-label">商品説明</label>
+                    <textarea name="description" id="description" class="form-control" rows="6"
+                        placeholder="商品の詳細、使用状況、注意事項など"><?= h($description) ?></textarea>
                 </div>
 
-
-                <!-- ===================== -->
                 <!-- 価格・税率 -->
-                <!-- ===================== -->
-
                 <div class="row">
-
-
                     <div class="col-md-6 mb-3">
-
-                        <label
-                            for="price"
-                            class="form-label"
-                        >
-                            価格
-                            <span class="text-danger">*</span>
-                        </label>
-
-
+                        <label for="price" class="form-label">価格 <span class="text-danger">*</span></label>
                         <div class="input-group">
-
-                            <span class="input-group-text">
-                                ¥
-                            </span>
-
-                            <input
-                                type="number"
-                                name="price"
-                                id="price"
-                                class="form-control"
-                                min="0"
-                                step="1"
-                                value="<?= htmlspecialchars(
-                                    $price ?? '',
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                ) ?>"
-                                required
-                            >
-
+                            <span class="input-group-text">¥</span>
+                            <input type="number" name="price" id="price" class="form-control" min="0" step="1"
+                                value="<?= h((string) $price) ?>" required>
                         </div>
-
                     </div>
-
-
                     <div class="col-md-6 mb-3">
-
-                        <label
-                            for="tax_rate"
-                            class="form-label"
-                        >
-                            税率
-                            <span class="text-danger">*</span>
-                        </label>
-
-
+                        <label for="tax_rate" class="form-label">税率 <span class="text-danger">*</span></label>
                         <div class="input-group">
-
-                            <input
-                                type="number"
-                                name="tax_rate"
-                                id="tax_rate"
-                                class="form-control"
-                                min="0"
-                                max="100"
-                                step="0.01"
-                                value="<?= htmlspecialchars(
-                                    $taxRate ?? '10',
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                ) ?>"
-                                required
-                            >
-
-                            <span class="input-group-text">
-                                %
-                            </span>
-
+                            <input type="number" name="tax_rate" id="tax_rate" class="form-control" min="0" max="100" step="0.01"
+                                value="<?= h((string) $taxRate) ?>" required>
+                            <span class="input-group-text">%</span>
                         </div>
-
                     </div>
-
-
                 </div>
 
+                <!-- ステータス・商品状態 -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="status" class="form-label">販売ステータス <span class="text-danger">*</span></label>
+                        <select name="status" id="status" class="form-select" required>
+                            <option value="">選択してください</option>
+                            <option value="販売中" <?= ($status ?? '') === '販売中' ? 'selected' : '' ?>>販売中</option>
+                            <option value="売切れ" <?= ($status ?? '') === '売切れ' ? 'selected' : '' ?>>売切れ</option>
+                            <option value="準備中" <?= ($status ?? '') === '準備中' ? 'selected' : '' ?>>準備中</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="product_condition" class="form-label">商品の状態 <span class="text-danger">*</span></label>
+                        <select name="product_condition" id="product_condition" class="form-select" required>
+                            <option value="">選択してください</option>
+                            <?php foreach ($productConditions as $conditionValue => $condition): ?>
+                                <option value="<?= h($conditionValue) ?>" <?= $productCondition === $conditionValue ? 'selected' : '' ?>>
+                                    <?= h((string) $condition['label']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
 
-                <!-- ===================== -->
-                <!-- ステータス -->
-                <!-- ===================== -->
-
+                <!-- 在庫数 -->
                 <div class="mb-3">
-
-                    <label
-                        for="status"
-                        class="form-label"
-                    >
-                        販売ステータス
-                        <span class="text-danger">*</span>
-                    </label>
-
-
-                    <select
-                        name="status"
-                        id="status"
-                        class="form-select"
-                        required
-                    >
-
-                        <option value="">
-                            選択してください
-                        </option>
-
-                        <option value="販売中"
-                            <?= ($status ?? '') === '販売中'
-                                ? 'selected'
-                                : '' ?>>
-                            販売中
-                        </option>
-
-                        <option value="売切れ"
-                            <?= ($status ?? '') === '売切れ'
-                                ? 'selected'
-                                : '' ?>>
-                            売切れ
-                        </option>
-
-                        <option value="準備中"
-                            <?= ($status ?? '') === '準備中'
-                                ? 'selected'
-                                : '' ?>>
-                            準備中
-                        </option>
-
-                    </select>
-
+                    <label for="stock_quantity" class="form-label">在庫数 <span class="text-danger">*</span></label>
+                    <input type="number" name="stock_quantity" id="stock_quantity" class="form-control" min="0" step="1"
+                        value="<?= h((string) $stockQuantity) ?>" required style="max-width: 160px">
+                    <div class="form-text">0にすると商品詳細ページで「売り切れ」として表示されます。</div>
                 </div>
 
-
-                <!-- ===================== -->
-                <!-- 商品状態 -->
-                <!-- ===================== -->
-
+                <!-- スペック -->
                 <div class="mb-3">
-
-                    <label
-                        for="product_condition"
-                        class="form-label"
-                    >
-                        商品の状態
-                        <span class="text-danger">*</span>
-                    </label>
-
-
-                    <select
-                        name="product_condition"
-                        id="product_condition"
-                        class="form-select"
-                        required
-                    >
-
-                        <option value="">
-                            選択してください
-                        </option>
-
-                        <?php foreach ($productConditions as $conditionValue => $condition): ?>
-                            <option value="<?= htmlspecialchars($conditionValue, ENT_QUOTES, 'UTF-8') ?>" <?= $productCondition === $conditionValue ? 'selected' : '' ?>>
-                                <?= htmlspecialchars((string) $condition['label'], ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-
-                    </select>
-
+                    <label for="specs_raw" class="form-label">スペック</label>
+                    <textarea name="specs_raw" id="specs_raw" class="form-control" rows="6"
+                        placeholder="1行に1項目、「項目名:値」の形式で入力してください&#10;例：&#10;モデル:CAAD13 Disc 105&#10;年式:2024&#10;サイズ:54&#10;素材:カーボン&#10;重量:1,050g"><?= h($specsRaw) ?></textarea>
+                    <div class="form-text">「項目名:値」の形式で1行ずつ入力してください（コロンは半角）。</div>
                 </div>
 
+                <!-- 付属品 -->
+                <div class="mb-3">
+                    <label for="accessories_raw" class="form-label">付属品</label>
+                    <textarea name="accessories_raw" id="accessories_raw" class="form-control" rows="4"
+                        placeholder="1行に1項目&#10;例：&#10;シートポスト&#10;専用ハンドル&#10;取扱説明書"><?= h($accessoriesRaw) ?></textarea>
+                </div>
 
-                <!-- ===================== -->
-                <!-- 商品画像 -->
-                <!-- ===================== -->
+                <!-- スタッフコメント -->
+                <div class="mb-3">
+                    <label for="staff_comment" class="form-label">スタッフコメント</label>
+                    <textarea name="staff_comment" id="staff_comment" class="form-control" rows="3"
+                        placeholder="実際にスタッフが確認したポイントや使用上の注意点など"><?= h($staffComment) ?></textarea>
+                </div>
 
+                <!-- メイン画像 -->
+                <div class="mb-3">
+                    <label for="images" class="form-label">商品画像（メイン）</label>
+                    <input type="file" name="images[]" id="images" class="form-control"
+                        accept="image/jpeg,image/png,image/webp" multiple>
+                    <div class="form-text">最大5枚まで登録できます。JPG / PNG / WebP、1枚あたり5MBまで。1枚目が一覧・関連商品のサムネイルになります。</div>
+                </div>
+
+                <!-- 傷・使用感写真 -->
                 <div class="mb-4">
-
-                    <label
-                        for="images"
-                        class="form-label"
-                    >
-                        商品画像
-                    </label>
-
-
-                    <input
-                        type="file"
-                        name="images[]"
-                        id="images"
-                        class="form-control"
-                        accept="image/jpeg,image/png,image/webp"
-                        multiple
-                    >
-
-
-                    <div class="form-text">
-
-                        最大5枚まで登録できます。
-                        JPG / PNG / WebP
-                        1枚あたり5MBまで。
-
-                    </div>
-
+                    <label for="condition_images" class="form-label">傷・使用感の写真</label>
+                    <input type="file" name="condition_images[]" id="condition_images" class="form-control"
+                        accept="image/jpeg,image/png,image/webp" multiple>
+                    <div class="form-text">商品詳細ページの「商品状態」タブに表示されます。最大5枚まで。</div>
                 </div>
-
-
-                <!-- ===================== -->
-                <!-- 登録ボタン -->
-                <!-- ===================== -->
 
                 <div class="d-flex justify-content-end gap-2">
-
-
-                    <a
-                        href="index.php"
-                        class="btn btn-secondary"
-                    >
-                        キャンセル
-                    </a>
-
-
-                    <button
-                        type="submit"
-                        class="btn btn-primary"
-                    >
-                        商品を登録
-                    </button>
-
-
+                    <a href="index.php" class="btn btn-secondary">キャンセル</a>
+                    <button type="submit" class="btn btn-primary">商品を登録</button>
                 </div>
-
 
             </form>
 
         </div>
-
     </div>
 
 </div>
-
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>
