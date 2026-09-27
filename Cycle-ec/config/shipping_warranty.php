@@ -10,8 +10,8 @@ declare(strict_types=1);
  * オーバーライド配列をここに追加するか、専用テーブルへ移行すること。
  */
 return [
-    'shipping_fee'   => '送料無料（※一部地域を除く）',
+    'shipping_fee'   => 'サイズ : 大 ＋2000円（※一部地域を除く）',
     'delivery_days'  => '2営業日以内',
-    'warranty'       => '90日保証',
+    'warranty'       => '返品保証',
     'return_policy'  => '商品到着後7日以内（未使用に限る）',
 ];
