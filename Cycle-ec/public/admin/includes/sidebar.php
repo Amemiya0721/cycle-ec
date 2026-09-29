@@ -4,7 +4,7 @@
         <a class="admin-nav-link <?= $activeMenu === 'dashboard' ? 'active' : '' ?>" href="<?= $baseUrl ?>admin/index.php"><span class="admin-nav-icon">⌂</span>ダッシュボード</a>
         <a class="admin-nav-link <?= $activeMenu === 'products' ? 'active' : '' ?>" href="<?= $baseUrl ?>admin/products/index.php"><span class="admin-nav-icon">▣</span>商品管理</a>
         <a class="admin-nav-link <?= $activeMenu === 'categories' ? 'active' : '' ?>" href="<?= $baseUrl ?>admin/categories.php"><span class="admin-nav-icon">◆</span>カテゴリ管理</a>
-        <a class="admin-nav-link <?= $activeMenu === 'orders' ? 'active' : '' ?>" href="<?= $baseUrl ?>admin/orders.php"><span class="admin-nav-icon">≡</span>注文管理</a>
+        <a class="admin-nav-link <?= $activeMenu === 'orders' ? 'active' : '' ?>" href="<?= $baseUrl ?>admin/order/index.php"><span class="admin-nav-icon">≡</span>注文管理</a>
         <a class="admin-nav-link <?= $activeMenu === 'discounts' ? 'active' : '' ?>" href="<?= $baseUrl ?>admin/discounts.php"><span class="admin-nav-icon">%</span>割引管理</a>
     </nav>
     <div class="admin-sidebar-divider"></div>

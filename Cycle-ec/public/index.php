@@ -340,7 +340,7 @@ require_once __DIR__ . '/includes/nav.php';
                 <div class="row g-4">
 
                     <div class="col-6 info-item">
-                        <div class="info-icon">🕐</div>
+                        <div class="info-icon"></div>
                         <div>
                             <h4>中古商品について</h4>
                             <p>商品の状態についてのご案内</p>
@@ -348,7 +348,7 @@ require_once __DIR__ . '/includes/nav.php';
                     </div>
 
                     <div class="col-6 info-item">
-                        <div class="info-icon">🚚</div>
+                        <div class="info-icon"></div>
                         <div>
                             <h4>配送について</h4>
                             <p>配送方法・送料について</p>
@@ -356,7 +356,7 @@ require_once __DIR__ . '/includes/nav.php';
                     </div>
 
                     <div class="col-6 info-item">
-                        <div class="info-icon">☀</div>
+                        <div class="info-icon"></div>
                         <div>
                             <h4>ジャンク品について</h4>
                             <p>ジャンク品の注意事項はこちら</p>
@@ -364,7 +364,7 @@ require_once __DIR__ . '/includes/nav.php';
                     </div>
 
                     <div class="col-6 info-item">
-                        <div class="info-icon">↩</div>
+                        <div class="info-icon"></div>
                         <div>
                             <h4>返品・返金について</h4>
                             <p>返品・返金ポリシーはこちら</p>
