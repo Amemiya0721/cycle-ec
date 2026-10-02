@@ -31,9 +31,10 @@ function h(?string $value): string { return htmlspecialchars($value ?? '', ENT_Q
 <h2 class="h5 mb-3">メイン画像</h2>
 <div class="row g-3 mb-5">
     <?php foreach ($product['images'] as $image): ?>
+        <?php $imageUrl = Product::publicImageUrl($image['image_url'] ?? null); ?>
         <div class="col-6 col-md-3">
             <div class="card">
-                <img class="card-img-top" src="<?= h((string) $image['image_url']) ?>" alt="<?= h((string) $product['name']) ?>">
+                <?php if ($imageUrl !== null): ?><img class="card-img-top" src="<?= h($imageUrl) ?>" alt="<?= h((string) $product['name']) ?>"><?php endif; ?>
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <small>表示順: <?= (int) $image['sort_order'] ?></small>
                     <a class="btn btn-sm btn-outline-danger" href="?id=<?= (int) $productId ?>&delete=<?= (int) $image['image_id'] ?>" onclick="return confirm('この画像を削除しますか？')">削除</a>
@@ -47,9 +48,10 @@ function h(?string $value): string { return htmlspecialchars($value ?? '', ENT_Q
 <h2 class="h5 mb-3">傷・使用感の写真（商品状態タブに表示）</h2>
 <div class="row g-3">
     <?php foreach ($product['condition_images'] as $image): ?>
+        <?php $imageUrl = Product::publicImageUrl($image['image_url'] ?? null); ?>
         <div class="col-6 col-md-3">
             <div class="card">
-                <img class="card-img-top" src="<?= h((string) $image['image_url']) ?>" alt="傷・使用感の写真">
+                <?php if ($imageUrl !== null): ?><img class="card-img-top" src="<?= h($imageUrl) ?>" alt="傷・使用感の写真"><?php endif; ?>
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <small>表示順: <?= (int) $image['sort_order'] ?></small>
                     <a class="btn btn-sm btn-outline-danger" href="?id=<?= (int) $productId ?>&delete=<?= (int) $image['image_id'] ?>" onclick="return confirm('この画像を削除しますか？')">削除</a>

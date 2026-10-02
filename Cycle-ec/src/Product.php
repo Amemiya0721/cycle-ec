@@ -34,6 +34,98 @@ require_once __DIR__ . '/Category.php';
  */
 class Product
 {
+    private const AVAILABLE_STATUSES = ['販売中', 'on_sale'];
+
+    /** Convert a stored product upload path to a URL under the configured app base URL. */
+    public static function publicImageUrl(?string $storedPath): ?string
+    {
+        if (!is_string($storedPath)) {
+            return null;
+        }
+
+        $path = parse_url($storedPath, PHP_URL_PATH);
+        if (!is_string($path)
+            || !preg_match('#\A/uploads/products/[1-9][0-9]*/[a-f0-9]{32}\.(?:jpg|png|webp)\z#iD', $path)) {
+            return null;
+        }
+
+        $config = require __DIR__ . '/../config/config.php';
+        $baseUrl = trim((string) ($config['app']['base_url'] ?? '/'));
+        if ($baseUrl === '/' && getenv('BASE_URL') === false) {
+            $baseUrl = self::inferApplicationBasePath();
+        }
+        if ($baseUrl === '' || $baseUrl === '/') {
+            return $path;
+        }
+
+        $baseParts = parse_url($baseUrl);
+        if ($baseParts === false
+            || isset($baseParts['user'])
+            || isset($baseParts['pass'])
+            || isset($baseParts['query'])
+            || isset($baseParts['fragment'])) {
+            return null;
+        }
+
+        $origin = '';
+        if (isset($baseParts['scheme']) || isset($baseParts['host'])) {
+            if (!isset($baseParts['scheme'], $baseParts['host'])
+                || !in_array(strtolower($baseParts['scheme']), ['http', 'https'], true)) {
+                return null;
+            }
+            $origin = strtolower($baseParts['scheme']) . '://' . $baseParts['host'];
+            if (isset($baseParts['port'])) {
+                $origin .= ':' . $baseParts['port'];
+            }
+        }
+
+        $basePath = (string) ($baseParts['path'] ?? '');
+        if ($origin === '' && $basePath !== '' && !str_starts_with($basePath, '/')) {
+            return null;
+        }
+
+        return $origin . rtrim($basePath, '/') . $path;
+    }
+
+    private static function inferApplicationBasePath(): string
+    {
+        $scriptPath = parse_url((string) ($_SERVER['SCRIPT_NAME'] ?? ''), PHP_URL_PATH);
+        if (!is_string($scriptPath) || $scriptPath === '') {
+            return '/';
+        }
+
+        foreach (['/pages/', '/admin/'] as $routePrefix) {
+            $position = strpos($scriptPath, $routePrefix);
+            if ($position !== false) {
+                $prefix = rtrim(substr($scriptPath, 0, $position), '/');
+                return $prefix === '' ? '/' : $prefix . '/';
+            }
+        }
+
+        if (basename($scriptPath) === 'index.php') {
+            $lastSlash = strrpos($scriptPath, '/');
+            if ($lastSlash === false || $lastSlash === 0) {
+                return '/';
+            }
+            return substr($scriptPath, 0, $lastSlash + 1);
+        }
+
+        return '/';
+    }
+
+    public static function isAvailableStatus(string $status): bool
+    {
+        return in_array($status, self::AVAILABLE_STATUSES, true);
+    }
+
+    private static function assertAvailableStatusHasStock(array $data): void
+    {
+        if (self::isAvailableStatus((string) ($data['status'] ?? ''))
+            && (int) ($data['stock_quantity'] ?? 0) <= 0) {
+            throw new InvalidArgumentException('販売中の商品には在庫を1点以上設定してください。');
+        }
+    }
+
     /**
      * 管理画面のテキストエリア入力（1行1項目、"キー:値"形式）をスペック配列に変換する。
      * 例: "モデル:CAAD13\n年式:2024" → [['spec_key'=>'モデル','spec_value'=>'CAAD13'], ...]
@@ -235,6 +327,7 @@ class Product
 
     public static function create(array $data): int
     {
+        self::assertAvailableStatusHasStock($data);
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare(
             'INSERT INTO products
@@ -263,6 +356,7 @@ class Product
 
     public static function update(int $productId, array $data): bool
     {
+        self::assertAvailableStatusHasStock($data);
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare(
             'UPDATE products
@@ -402,6 +496,8 @@ class Product
                              ON pi.product_id = p.product_id AND pi.image_type = "main" AND pi.sort_order = 1
                          WHERE p.is_deleted = 0
                              AND p.is_recommended = 1
+                             AND p.status NOT IN (\'売切れ\', \'SOLD\')
+                             AND p.stock_quantity > 0
                          ORDER BY p.updated_at DESC, p.product_id DESC
                          LIMIT :limit'
                 );
@@ -430,6 +526,8 @@ class Product
                             )
                          WHERE p.is_deleted = 0
                              AND ph.price > p.price
+                             AND p.status NOT IN (\'売切れ\', \'SOLD\')
+                             AND p.stock_quantity > 0
                          ORDER BY (ph.price - p.price) DESC, p.updated_at DESC
                          LIMIT :limit'
                 );
@@ -754,6 +852,11 @@ class Product
         $conditions = [
             'p.is_deleted = 0'
         ];
+
+        if (($criteria['exclude_sold_out'] ?? false) === true) {
+            $conditions[] = "p.status NOT IN ('売切れ', 'SOLD')";
+            $conditions[] = 'p.stock_quantity > 0';
+        }
 
         $params = [];
 

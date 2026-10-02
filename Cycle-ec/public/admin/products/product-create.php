@@ -81,6 +81,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stockQuantity === '' || !ctype_digit((string) $stockQuantity)) {
         $errors[] = '在庫数を正しく入力してください。';
     }
+    if (
+        Product::isAvailableStatus((string) $status)
+        && ctype_digit((string) $stockQuantity)
+        && (int) $stockQuantity === 0
+    ) {
+        $errors[] = '在庫数が0の商品は販売中にできません。売切れまたは準備中を選択してください。';
+    }
 
 
     // ------------------------------------

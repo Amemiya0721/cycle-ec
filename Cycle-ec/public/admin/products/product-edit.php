@@ -63,6 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ) {
         $errors[] = '入力値を確認してください。';
     }
+    if (
+        Product::isAvailableStatus((string) $data['status'])
+        && ctype_digit((string) $data['stock_quantity'])
+        && (int) $data['stock_quantity'] === 0
+    ) {
+        $errors[] = '在庫数が0の商品は販売中にできません。売切れまたは準備中を選択してください。';
+    }
 
     // 画像バリデーション（新規追加分のみ）
     $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -207,8 +214,9 @@ require __DIR__ . '/../includes/header.php';
     <div class="d-flex flex-wrap gap-2 mb-2">
         <?php if (!empty($product['images'])): ?>
             <?php foreach ($product['images'] as $image): ?>
+                <?php $imageUrl = Product::publicImageUrl($image['image_url'] ?? null); ?>
                 <div class="border p-1" style="width:90px">
-                    <img src="<?= h((string) $image['image_url']) ?>" class="img-fluid mb-1" alt="">
+                    <?php if ($imageUrl !== null): ?><img src="<?= h($imageUrl) ?>" class="img-fluid mb-1" alt=""><?php endif; ?>
                     <a class="btn btn-sm btn-outline-danger w-100" href="product-images.php?id=<?= (int) $productId ?>&delete=<?= (int) $image['image_id'] ?>" onclick="return confirm('この画像を削除しますか？')">削除</a>
                 </div>
             <?php endforeach; ?>
@@ -225,8 +233,9 @@ require __DIR__ . '/../includes/header.php';
     <div class="d-flex flex-wrap gap-2 mb-2">
         <?php if (!empty($product['condition_images'])): ?>
             <?php foreach ($product['condition_images'] as $image): ?>
+                <?php $imageUrl = Product::publicImageUrl($image['image_url'] ?? null); ?>
                 <div class="border p-1" style="width:90px">
-                    <img src="<?= h((string) $image['image_url']) ?>" class="img-fluid mb-1" alt="">
+                    <?php if ($imageUrl !== null): ?><img src="<?= h($imageUrl) ?>" class="img-fluid mb-1" alt=""><?php endif; ?>
                     <a class="btn btn-sm btn-outline-danger w-100" href="product-images.php?id=<?= (int) $productId ?>&delete=<?= (int) $image['image_id'] ?>" onclick="return confirm('この画像を削除しますか？')">削除</a>
                 </div>
             <?php endforeach; ?>
