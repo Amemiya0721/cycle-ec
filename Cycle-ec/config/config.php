@@ -47,6 +47,12 @@ return [
         'base_url' => getenv('BASE_URL') ?: '/',
     ],
 
+    'site' => [
+        'name' => getenv('SITE_NAME') ?: 'OVERHAUL',
+        'url' => getenv('SITE_URL') ?: '',
+        'contact_email' => getenv('CONTACT_EMAIL') ?: '',
+    ],
+
     /*
      * -------------------------------------------------------
      * データベース設定

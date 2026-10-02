@@ -8,6 +8,47 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 class Mailer
 {
+    /** Send a plain-text message to one or more recipients. */
+    public static function sendTextMail(array $recipients, string $subject, string $body, bool $blindCopy = false): bool
+    {
+        if ($subject === '' || preg_match('/[\r\n]/', $subject)) {
+            return false;
+        }
+
+        $validRecipients = [];
+        foreach ($recipients as $recipient) {
+            if (!is_string($recipient) || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+                return false;
+            }
+            $validRecipients[] = $recipient;
+        }
+        $validRecipients = array_values(array_unique($validRecipients));
+        if ($validRecipients === []) {
+            return false;
+        }
+
+        try {
+            $config = require __DIR__ . '/../config/config.php';
+            $mailer = new PHPMailer(true);
+            self::configure($mailer, $config['smtp']);
+            foreach ($validRecipients as $recipient) {
+                if ($blindCopy) {
+                    $mailer->addBCC($recipient);
+                } else {
+                    $mailer->addAddress($recipient);
+                }
+            }
+            $mailer->Subject = $subject;
+            $mailer->isHTML(false);
+            $mailer->Body = $body;
+            $mailer->send();
+            return true;
+        } catch (\Throwable $exception) {
+            error_log('Configured text email delivery failed.');
+            return false;
+        }
+    }
+
     public static function sendAdminLoginCode(string $recipient, string $code): bool
     {
         $config = require __DIR__ . '/../config/config.php';
