@@ -75,12 +75,15 @@ CREATE TABLE categories (
     category_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     name VARCHAR(100) NOT NULL,
+    icon_url VARCHAR(500) NULL,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 0,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
-    UNIQUE KEY uk_categories_name (name)
+    UNIQUE KEY uk_categories_name (name),
+    INDEX idx_categories_sort_order (sort_order, category_id)
 ) ENGINE=InnoDB;
 
 

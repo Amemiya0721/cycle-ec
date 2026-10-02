@@ -53,6 +53,7 @@ erDiagram
     CATEGORIES {
         int category_id PK
         varchar name
+        int sort_order "UNSIGNED DEFAULT 0"
         varchar icon_url "varchar(500)"
         datetime created_at
         datetime updated_at

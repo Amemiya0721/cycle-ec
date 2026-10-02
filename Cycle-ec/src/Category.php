@@ -17,6 +17,18 @@ require_once __DIR__ . '/Database.php';
  */
 class Category
 {
+    /** 商品一覧で使うカテゴリURLをID形式に統一する。 */
+    public static function productsUrl(int $categoryId, string $baseUrl = '/'): string
+    {
+        if ($categoryId < 1) {
+            throw new InvalidArgumentException('カテゴリIDが正しくありません。');
+        }
+
+        return rtrim(trim($baseUrl), '/')
+            . '/pages/products.php?category='
+            . rawurlencode((string) $categoryId);
+    }
+
     /**
      * URLパラメータの category 値を category_id に解決する。
      *
@@ -50,12 +62,16 @@ class Category
     /**
      * カテゴリ一覧を取得する（検索フォームのプルダウン等に使用）。
      *
-     * @return array<int, array{category_id:int, name:string, icon_url:?string}>
+     * @return array<int, array{category_id:int, name:string, icon_url:?string, sort_order:int}>
      */
     public static function all(): array
     {
         $pdo = Database::getConnection();
-        $stmt = $pdo->query('SELECT category_id, name, icon_url FROM CATEGORIES ORDER BY category_id ASC');
+        $stmt = $pdo->query(
+            'SELECT category_id, name, icon_url, sort_order
+             FROM categories
+             ORDER BY sort_order ASC, category_id ASC'
+        );
         return $stmt->fetchAll();
     }
 
@@ -63,14 +79,14 @@ class Category
     {
         $pdo = Database::getConnection();
         $stmt = $pdo->query(
-            'SELECT c.category_id, c.name, c.icon_url,
+            'SELECT c.category_id, c.name, c.icon_url, c.sort_order,
                     COUNT(p.product_id) AS product_count
              FROM categories c
              LEFT JOIN products p
                ON p.category_id = c.category_id
               AND p.is_deleted = 0
-             GROUP BY c.category_id, c.name, c.icon_url
-             ORDER BY c.category_id ASC'
+             GROUP BY c.category_id, c.name, c.icon_url, c.sort_order
+             ORDER BY c.sort_order ASC, c.category_id ASC'
         );
         return $stmt->fetchAll();
     }
@@ -78,16 +94,75 @@ class Category
     public static function create(string $name, ?string $iconUrl = null, ?PDO $pdo = null): int
     {
         $pdo ??= Database::getConnection();
+        $sortOrder = (int) $pdo->query(
+            'SELECT COALESCE(MAX(sort_order), 0) + 1 FROM categories'
+        )->fetchColumn();
         $stmt = $pdo->prepare(
-            'INSERT INTO categories (name, icon_url)
-             VALUES (:name, :icon_url)'
+            'INSERT INTO categories (name, icon_url, sort_order)
+             VALUES (:name, :icon_url, :sort_order)'
         );
         $stmt->execute([
             ':name' => $name,
             ':icon_url' => $iconUrl,
+            ':sort_order' => $sortOrder,
         ]);
-
         return (int) $pdo->lastInsertId();
+    }
+
+    /** 保存されたID一覧が現在のカテゴリ全件と一致する場合だけ表示順を更新する。 */
+    public static function reorder(array $categoryIds): bool
+    {
+        $normalizedIds = [];
+        foreach ($categoryIds as $categoryId) {
+            if (!is_int($categoryId) || $categoryId < 1) {
+                throw new InvalidArgumentException('カテゴリIDが正しくありません。');
+            }
+            $normalizedIds[] = $categoryId;
+        }
+        if (count($normalizedIds) !== count(array_unique($normalizedIds))) {
+            throw new InvalidArgumentException('カテゴリIDが重複しています。');
+        }
+
+        $pdo = Database::getConnection();
+        try {
+            $pdo->beginTransaction();
+
+            $existingIds = $pdo->query(
+                'SELECT category_id FROM categories ORDER BY category_id ASC FOR UPDATE'
+            )->fetchAll(PDO::FETCH_COLUMN);
+            $existingIds = array_map('intval', $existingIds);
+            $submittedIds = $normalizedIds;
+            sort($existingIds);
+            sort($submittedIds);
+
+            if ($existingIds !== $submittedIds) {
+                $pdo->rollBack();
+                return false;
+            }
+
+            $updateStmt = $pdo->prepare(
+                'UPDATE categories
+                 SET sort_order = :sort_order
+                 WHERE category_id = :category_id'
+            );
+            foreach ($normalizedIds as $sortOrder => $categoryId) {
+                $updateStmt->execute([
+                    ':sort_order' => $sortOrder + 1,
+                    ':category_id' => $categoryId,
+                ]);
+                if ($updateStmt->rowCount() > 1) {
+                    throw new RuntimeException('カテゴリ表示順を更新できませんでした。');
+                }
+            }
+
+            $pdo->commit();
+            return true;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public static function findById(int $categoryId): ?array
