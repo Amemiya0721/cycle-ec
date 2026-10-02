@@ -8,6 +8,9 @@ $shippingWarranty = require __DIR__ . '/../../config/shipping_warranty.php';
 $productConditions = require __DIR__ . '/../../config/product_conditions.php';
 
 require_once __DIR__ . '/../../src/Product.php';
+require_once __DIR__ . '/../../src/Auth.php';
+Auth::start();
+$checkoutCsrfToken = Auth::csrfToken();
 
 $productId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 $product = null;
@@ -79,7 +82,74 @@ function isSoldOut(array $product): bool
     return (int) ($product['stock_quantity'] ?? 0) <= 0;
 }
 
+/** Only use original images stored inside this product's local upload directory. */
+function productGalleryImages(array $images, int $productId, string $productName, string $label): array
+{
+    if ($productId < 1) {
+        return [];
+    }
+
+    $productDirectory = realpath(__DIR__ . '/../uploads/products/' . $productId);
+    if ($productDirectory === false) {
+        return [];
+    }
+
+    $galleryImages = [];
+    $pathPattern = '#\A/uploads/products/' . preg_quote((string) $productId, '#') . '/([a-f0-9]{32}\.(?:jpg|png|webp))\z#iD';
+    foreach ($images as $image) {
+        $imageUrl = $image['image_url'] ?? null;
+        if (!is_string($imageUrl) || !preg_match($pathPattern, $imageUrl, $matches)) {
+            continue;
+        }
+
+        $filePath = realpath($productDirectory . DIRECTORY_SEPARATOR . $matches[1]);
+        if ($filePath === false || dirname($filePath) !== $productDirectory || !is_file($filePath)) {
+            continue;
+        }
+
+        $imageInfo = @getimagesize($filePath);
+        if ($imageInfo === false
+            || !in_array($imageInfo['mime'] ?? '', ['image/jpeg', 'image/png', 'image/webp'], true)
+            || (int) $imageInfo[0] < 1
+            || (int) $imageInfo[1] < 1) {
+            continue;
+        }
+
+        $publicImageUrl = Product::publicImageUrl($imageUrl);
+        if ($publicImageUrl === null) {
+            continue;
+        }
+
+        $galleryImages[] = [
+            'src' => $publicImageUrl,
+            'width' => (int) $imageInfo[0],
+            'height' => (int) $imageInfo[1],
+            'alt' => $productName . ' ' . $label,
+        ];
+    }
+
+    return $galleryImages;
+}
+
+$mainGalleryImages = $product === null
+    ? []
+    : productGalleryImages(
+        $product['images'] ?? [],
+        (int) $product['product_id'],
+        (string) $product['name'],
+        '商品画像'
+    );
+$conditionGalleryImages = $product === null
+    ? []
+    : productGalleryImages(
+        $product['condition_images'] ?? [],
+        (int) $product['product_id'],
+        (string) $product['name'],
+        '状態写真'
+    );
+
 $pageCss = 'product-detail.css';
+$pageCssExtras = ['https://cdn.jsdelivr.net/npm/photoswipe@5.4.4/dist/photoswipe.css'];
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/nav.php';
 ?>
@@ -100,7 +170,7 @@ require_once __DIR__ . '/../includes/nav.php';
             <nav aria-label="パンくず" class="pd-breadcrumb">
                 <a href="<?= h($baseUrl) ?>index.php">HOME</a>
                 <span class="sep">&gt;</span>
-                <a href="<?= h($baseUrl) ?>pages/products.php?category=<?= (int) $product['category_id'] ?>">
+                <a href="<?= h(Category::productsUrl((int) $product['category_id'], $baseUrl)) ?>">
                     <?= h((string) $product['category_name']) ?>
                 </a>
                 <span class="sep">&gt;</span>
@@ -119,24 +189,30 @@ require_once __DIR__ . '/../includes/nav.php';
                             </span>
                         <?php endif; ?>
 
-                        <?php if (!empty($product['images'])): ?>
+                        <?php if (!empty($mainGalleryImages)): ?>
                             <div class="pd-main-image" id="pdMainImage">
-                                <img
-                                    src="<?= h((string) $product['images'][0]['image_url']) ?>"
-                                    alt="<?= h((string) $product['name']) ?>"
-                                    id="pdMainImageTag"
-                                >
+                                <a
+                                    class="pd-image-zoom"
+                                    id="pdMainImageLink"
+                                    href="<?= h($mainGalleryImages[0]['src']) ?>"
+                                    target="_blank"
+                                    rel="noopener"
+                                    data-main-gallery-index="0"
+                                    aria-label="商品画像を拡大表示"
+                                ><img src="<?= h($mainGalleryImages[0]['src']) ?>" alt="<?= h((string) $product['name']) ?>" id="pdMainImageTag"></a>
                             </div>
 
-                            <?php if (count($product['images']) > 1): ?>
+                            <?php if (count($mainGalleryImages) > 1): ?>
                                 <div class="pd-thumbs">
-                                    <?php foreach ($product['images'] as $index => $image): ?>
+                                    <?php foreach ($mainGalleryImages as $index => $image): ?>
                                         <button
                                             type="button"
                                             class="pd-thumb-btn <?= $index === 0 ? 'is-active' : '' ?>"
-                                            data-image-url="<?= h((string) $image['image_url']) ?>"
+                                            data-image-url="<?= h($image['src']) ?>"
+                                            data-image-index="<?= (int) $index ?>"
+                                            aria-label="商品画像 <?= (int) $index + 1 ?> を表示"
                                         >
-                                            <img src="<?= h((string) $image['image_url']) ?>" alt="">
+                                            <img src="<?= h($image['src']) ?>" alt="">
                                         </button>
                                     <?php endforeach; ?>
                                 </div>
@@ -188,10 +264,11 @@ require_once __DIR__ . '/../includes/nav.php';
                         <?php else: ?>
                             <form method="post" action="<?= h($baseUrl) ?>pages/cart.php" class="pd-actions">
                                 <input type="hidden" name="product_id" value="<?= (int) $product['product_id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= h($checkoutCsrfToken) ?>">
                                 <button class="btn btn-cart" type="submit">
                                     <span aria-hidden="true">&#128722;</span> カートに入れる
                                 </button>
-                                <button class="btn btn-buy" type="submit" formaction="<?= h($baseUrl) ?>pages/checkout.php">
+                                <button class="btn btn-buy" type="submit" name="checkout_intent" value="buy_now" formaction="<?= h($baseUrl) ?>pages/checkout.php">
                                     購入手続きへ
                                 </button>
                             </form>
@@ -249,11 +326,13 @@ require_once __DIR__ . '/../includes/nav.php';
                         <p class="pd-empty">商品状態の情報はありません。</p>
                     <?php endif; ?>
 
-                    <?php if (!empty($product['condition_images'])): ?>
+                    <?php if (!empty($conditionGalleryImages)): ?>
                         <div class="pd-condition-photos">
-                            <?php foreach ($product['condition_images'] as $index => $photo): ?>
+                            <?php foreach ($conditionGalleryImages as $index => $photo): ?>
                                 <figure class="pd-condition-photo">
-                                    <img src="<?= h((string) $photo['image_url']) ?>" alt="傷・使用感の写真<?= $index + 1 ?>">
+                                    <a class="pd-condition-zoom" href="<?= h($photo['src']) ?>" target="_blank" rel="noopener" data-condition-gallery-index="<?= (int) $index ?>" aria-label="状態写真 <?= (int) $index + 1 ?> を拡大表示">
+                                        <img src="<?= h($photo['src']) ?>" alt="傷・使用感の写真<?= $index + 1 ?>">
+                                    </a>
                                     <figcaption>写真 (<?= $index + 1 ?>)</figcaption>
                                 </figure>
                             <?php endforeach; ?>
@@ -322,11 +401,12 @@ require_once __DIR__ . '/../includes/nav.php';
                     <section class="pd-panel" id="pd-panel-related">
                         <h2 class="pd-panel-title d-lg-none">関連商品</h2>
                         <div class="pd-related-scroll">
-                            <?php foreach ($relatedProducts as $related): ?>
+                                    <?php foreach ($relatedProducts as $related): ?>
+                                        <?php $relatedImageUrl = Product::publicImageUrl($related['image_url'] ?? null); ?>
                                 <a class="pd-related-card" href="product-detail.php?id=<?= (int) $related['product_id'] ?>">
                                     <div class="prod-thumb">
-                                        <?php if (!empty($related['image_url'])): ?>
-                                            <img src="<?= h((string) $related['image_url']) ?>" alt="<?= h((string) $related['name']) ?>" class="prod-image">
+                                                <?php if ($relatedImageUrl !== null): ?>
+                                                    <img src="<?= h($relatedImageUrl) ?>" alt="<?= h((string) $related['name']) ?>" class="prod-image">
                                         <?php else: ?>
                                             <span class="thumb-icon" aria-hidden="true">&#128690;</span>
                                         <?php endif; ?>
@@ -347,6 +427,8 @@ require_once __DIR__ . '/../includes/nav.php';
 </main>
 
 <?php if ($errorMessage === null): ?>
+<?php if ($mainGalleryImages): ?><script type="application/json" id="pd-main-gallery-data"><?= json_encode($mainGalleryImages, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script><?php endif; ?>
+<?php if ($conditionGalleryImages): ?><script type="application/json" id="pd-condition-gallery-data"><?= json_encode($conditionGalleryImages, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script><?php endif; ?>
 <script src="<?= h($baseUrl) ?>assets/js/product-detail.js"></script>
 <?php endif; ?>
 

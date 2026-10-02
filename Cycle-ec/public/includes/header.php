@@ -34,6 +34,14 @@ $baseUrl = $config['app']['base_url'];
         >
     <?php endif; ?>
 
+    <?php if (isset($pageCssExtras) && is_array($pageCssExtras)): ?>
+        <?php foreach ($pageCssExtras as $pageCssExtra): ?>
+            <?php if (is_string($pageCssExtra)): ?>
+                <link rel="stylesheet" href="<?= htmlspecialchars($pageCssExtra, ENT_QUOTES, 'UTF-8') ?>">
+            <?php endif; ?>
+        <?php endforeach; ?>
+    <?php endif; ?>
+
     <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"

@@ -13,7 +13,11 @@ $priceReducedProducts = [];
 try {
     $categories = Category::all();
     $recommendedProducts = Product::recommended(5);
-    $newProducts = Product::search(['sort' => 'newest', 'page' => 1])['items'];
+    $newProducts = Product::search([
+        'sort' => 'newest',
+        'page' => 1,
+        'exclude_sold_out' => true,
+    ])['items'];
     $priceReducedProducts = Product::priceReduced(5);
 } catch (Throwable $e) {
     error_log('Top page category loading failed: ' . $e->getMessage());
@@ -60,7 +64,7 @@ require_once __DIR__ . '/includes/nav.php';
 
             <div class="d-flex gap-3 hero-cta">
                 <a
-                    href="<?= $baseUrl ?>pages/products.php?category=junk"
+                    href="<?= $baseUrl ?>pages/products.php?condition%5B%5D=JUNK"
                     class="btn btn-outline-light btn-hero">
                     ジャンク倉庫を見る
                 </a>
@@ -100,8 +104,9 @@ require_once __DIR__ . '/includes/nav.php';
                         <a href="<?= $baseUrl ?>pages/product-detail.php?id=<?= (int) $product['product_id'] ?>" class="product-card">
                             <div class="product-image">
                                 <span class="product-badge">PICK UP</span>
-                                <?php if (!empty($product['image_url'])): ?>
-                                    <img src="<?= h((string) $product['image_url']) ?>" alt="<?= h((string) $product['name']) ?>">
+                                <?php $imageUrl = Product::publicImageUrl($product['image_url'] ?? null); ?>
+                                <?php if ($imageUrl !== null): ?>
+                                    <img src="<?= h($imageUrl) ?>" alt="<?= h((string) $product['name']) ?>">
                                 <?php else: ?>
                                     <div class="d-flex align-items-center justify-content-center h-100 text-muted">画像なし</div>
                                 <?php endif; ?>
@@ -146,7 +151,7 @@ require_once __DIR__ . '/includes/nav.php';
             id="cat-grid">
             <?php foreach ($categories as $category): ?>
                 <div class="col-6 col-lg">
-                    <a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>" class="cat-card" data-category-id="<?= (int) $category['category_id'] ?>">
+                    <a href="<?= h(Category::productsUrl((int) $category['category_id'], $baseUrl)) ?>" class="cat-card" data-category-id="<?= (int) $category['category_id'] ?>">
                         <div class="cat-icon">
                             <?php if (!empty($category['icon_url'])): ?>
                                 <img src="<?= htmlspecialchars((string) $category['icon_url'], ENT_QUOTES, 'UTF-8') ?>" alt="">
@@ -193,7 +198,8 @@ require_once __DIR__ . '/includes/nav.php';
                     <a href="<?= $baseUrl ?>pages/product-detail.php?id=<?= (int) $product['product_id'] ?>" class="prod-card">
                         <div class="prod-thumb">
                             <span class="badge-new">NEW</span>
-                            <?php if (!empty($product['image_url'])): ?><img class="prod-image" src="<?= h($product['image_url']) ?>" alt="<?= h($product['name']) ?>"><?php else: ?><span class="thumb-icon">画像なし</span><?php endif; ?>
+                            <?php $imageUrl = Product::publicImageUrl($product['image_url'] ?? null); ?>
+                            <?php if ($imageUrl !== null): ?><img class="prod-image" src="<?= h($imageUrl) ?>" alt="<?= h($product['name']) ?>"><?php else: ?><span class="thumb-icon">画像なし</span><?php endif; ?>
                         </div>
                         <div class="prod-info"><div class="prod-name"><?= h($product['name']) ?></div><div class="prod-price">¥<?= number_format((float) $product['price']) ?><span class="tax">税込</span></div></div>
                     </a>
@@ -229,7 +235,8 @@ require_once __DIR__ . '/includes/nav.php';
                     <a href="<?= $baseUrl ?>pages/product-detail.php?id=<?= (int) $product['product_id'] ?>" class="prod-card">
                         <div class="prod-thumb">
                             <span class="badge-down">PRICE DOWN</span><span class="off-badge"><?= $discountRate ?>%<br>OFF</span>
-                            <?php if (!empty($product['image_url'])): ?><img class="prod-image" src="<?= h($product['image_url']) ?>" alt="<?= h($product['name']) ?>"><?php else: ?><span class="thumb-icon">画像なし</span><?php endif; ?>
+                            <?php $imageUrl = Product::publicImageUrl($product['image_url'] ?? null); ?>
+                            <?php if ($imageUrl !== null): ?><img class="prod-image" src="<?= h($imageUrl) ?>" alt="<?= h($product['name']) ?>"><?php else: ?><span class="thumb-icon">画像なし</span><?php endif; ?>
                         </div>
                         <div class="prod-info"><div class="prod-name"><?= h($product['name']) ?></div><div><span class="price-old">¥<?= number_format((float) $product['old_price']) ?></span><span class="price-new">¥<?= number_format((float) $product['price']) ?></span><span class="tax">税込</span></div></div>
                     </a>

@@ -37,6 +37,20 @@ $category = isset($_GET['category']) && is_string($_GET['category'])
     ? trim($_GET['category'])
     : null;
 
+if ($category !== null && $category !== '') {
+    $resolvedCategoryId = Category::resolveCategoryId($category);
+    if ($resolvedCategoryId !== null && $category !== (string) $resolvedCategoryId) {
+        $otherParams = $_GET;
+        unset($otherParams['category']);
+        $canonicalUrl = Category::productsUrl($resolvedCategoryId, $baseUrl);
+        if ($otherParams !== []) {
+            $canonicalUrl .= '&' . http_build_query($otherParams);
+        }
+        header('Location: ' . $canonicalUrl, true, 302);
+        exit;
+    }
+}
+
 $keyword = isset($_GET['keyword']) && is_string($_GET['keyword'])
     ? trim($_GET['keyword'])
     : null;
@@ -239,7 +253,7 @@ require_once __DIR__ . '/../includes/nav.php';
                         <?php foreach ($categories as $cat): ?>
 
                             <option
-                                value="<?= h($cat['name'] ?? null) ?>"
+                                value="<?= (int) ($cat['category_id'] ?? 0) ?>"
                                 <?= isSelectedCategory(scalarValue($category), $cat)
                                     ? 'selected'
                                     : '' ?>
@@ -432,13 +446,11 @@ require_once __DIR__ . '/../includes/nav.php';
                                 <div class="prod-thumb">
 
                                     <?php if (
-                                        !empty($item['image_url'])
+                                        ($imageUrl = Product::publicImageUrl($item['image_url'] ?? null)) !== null
                                     ): ?>
 
                                         <img
-                                            src="<?= h(
-                                                (string) $item['image_url']
-                                            ) ?>"
+                                            src="<?= h($imageUrl) ?>"
                                             alt="<?= h(
                                                 (string) $item['name']
                                             ) ?>"

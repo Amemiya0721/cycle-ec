@@ -112,7 +112,7 @@ try {
 
         <?php foreach ($categories as $category): ?>
           <li>
-            <a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>" data-cat="<?= (int) $category['category_id'] ?>">
+            <a href="<?= htmlspecialchars(Category::productsUrl((int) $category['category_id'], $baseUrl), ENT_QUOTES, 'UTF-8') ?>" data-cat="<?= (int) $category['category_id'] ?>">
               <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
             </a>
           </li>
@@ -227,7 +227,7 @@ try {
 
       <?php foreach ($categories as $category): ?>
         <li>
-          <a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>" data-cat="<?= (int) $category['category_id'] ?>">
+          <a href="<?= htmlspecialchars(Category::productsUrl((int) $category['category_id'], $baseUrl), ENT_QUOTES, 'UTF-8') ?>" data-cat="<?= (int) $category['category_id'] ?>">
             <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
           </a>
         </li>

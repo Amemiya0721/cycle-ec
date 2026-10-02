@@ -26,7 +26,7 @@
                     <ul class="list-unstyled">
                         <li><a href="<?= $baseUrl ?>pages/products.php">商品一覧</a></li>
                         <?php foreach ($footerCategories as $category): ?>
-                            <li><a href="<?= $baseUrl ?>pages/products.php?category=<?= (int) $category['category_id'] ?>"><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></a></li>
+                            <li><a href="<?= htmlspecialchars(Category::productsUrl((int) $category['category_id'], $baseUrl), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
