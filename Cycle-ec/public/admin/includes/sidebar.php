@@ -10,7 +10,7 @@
     <div class="admin-sidebar-divider"></div>
     <div class="admin-sidebar-heading">その他</div>
     <nav class="nav flex-column gap-1">
-        <a class="admin-nav-link <?= $activeMenu === 'mail' ? 'active' : '' ?>" href="<?= $baseUrl ?>pages/mail_test.php"><span class="admin-nav-icon">@</span>メール送信テスト</a>
+        <a class="admin-nav-link <?= $activeMenu === 'mail' ? 'active' : '' ?>" href="<?= $baseUrl ?>admin/mail_test.php"><span class="admin-nav-icon">@</span>メール送信テスト</a>
         <span class="admin-nav-link disabled"><span class="admin-nav-icon">?</span>問い合わせ <small>準備中</small></span>
     </nav>
 </aside>

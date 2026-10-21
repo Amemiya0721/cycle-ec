@@ -66,7 +66,7 @@ require_once __DIR__ . '/includes/nav.php';
                 <a
                     href="<?= $baseUrl ?>pages/products.php?condition%5B%5D=JUNK"
                     class="btn btn-outline-light btn-hero">
-                    ジャンク倉庫を見る
+                    ジャンク一覧を見る
                 </a>
             </div>
 
@@ -165,12 +165,6 @@ require_once __DIR__ . '/includes/nav.php';
             <?php endforeach; ?>
         </div>
 
-        <div class="cat-more">
-            <a
-                href="<?= $baseUrl ?>pages/products.php">
-                すべてのカテゴリを見る &gt;
-            </a>
-        </div>
 
     </div>
 </section>
@@ -219,12 +213,6 @@ require_once __DIR__ . '/includes/nav.php';
         <div class="section-head d-flex align-items-baseline justify-content-between">
 
             <h2>値下げしました</h2>
-
-            <a
-                href="<?= $baseUrl ?>pages/products.php?sort=price_desc"
-                class="more-link">
-                一覧を見る &gt;
-            </a>
 
         </div>
 
@@ -330,12 +318,6 @@ require_once __DIR__ . '/includes/nav.php';
                     一つひとつ丁寧に検品・撮影し、商品の状態をできるだけわかりやすく掲載しています。
                     一点物の出会いを、ぜひお楽しみください。
                 </p>
-
-                <a
-                    href="<?= $baseUrl ?>index.php#about"
-                    class="detail-link">
-                    詳しく見る &gt;
-                </a>
 
             </div>
 

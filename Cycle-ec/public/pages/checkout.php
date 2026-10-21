@@ -91,17 +91,7 @@ function h(?string $value): string
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/nav.php';
 ?>
-<!DOCTYPE html>
-<html lang="ja">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>注文手続き | OVERHAUL</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-
-<body class="bg-light">
     <main class="container py-5">
         <h1 class="h3 mb-4">注文手続き</h1><?php foreach ($errors as $error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endforeach; ?><form method="post" class="card card-body"><input type="hidden" name="csrf_token" value="<?= h(Auth::csrfToken()) ?>"><input type="hidden" name="checkout_token" value="<?= h((string) $_SESSION['checkout_token']) ?>">
             <div class="mb-3"><label class="form-label">郵便番号</label><input class="form-control" name="postal_code" required></div>

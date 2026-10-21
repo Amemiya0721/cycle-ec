@@ -26,6 +26,11 @@ $baseUrl = $config['app']['base_url'];
         href="<?= $baseUrl ?>assets/css/style.css"
     >
 
+    <link
+        rel="stylesheet"
+        href="<?= $baseUrl ?>assets/css/nav.css"
+    >
+
     <?php if (!empty($pageCss)): ?>
         <!-- ページ固有CSS -->
         <link

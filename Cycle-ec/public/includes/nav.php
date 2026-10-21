@@ -154,7 +154,7 @@ try {
      モバイルメニュー
 ========================= -->
 <div
-  class="offcanvas offcanvas-end"
+  class="offcanvas offcanvas-end mobile-nav"
   tabindex="-1"
   id="mobileNav"
   aria-labelledby="mobileNavLabel"
