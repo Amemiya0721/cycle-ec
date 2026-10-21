@@ -72,6 +72,12 @@ if (isset($_GET['condition'])) {
     $selectedConditions = array_values(array_unique($selectedConditions));
 }
 
+// SOLD表示切替: 'hide' = SOLDを非表示 / それ以外 = 表示（デフォルト）
+$soldFilter = isset($_GET['sold']) && is_string($_GET['sold'])
+    ? trim($_GET['sold'])
+    : null;
+$hideSold = ($soldFilter === 'hide');
+
 $page = isset($_GET['page'])
     ? (int) $_GET['page']
     : 1;
@@ -99,6 +105,10 @@ if ($sort !== null && $sort !== '') {
 
 if ($selectedConditions) {
     $criteria['conditions'] = $selectedConditions;
+}
+
+if ($hideSold) {
+    $criteria['exclude_sold_out'] = true;
 }
 
 $criteria['page'] = max(1, $page);
@@ -198,6 +208,23 @@ function currentSort(?string $sort): string
 }
 
 
+/**
+ * 売切れ商品かどうか判定する。
+ * Product::buildWhereConditions() の exclude_sold_out と同じ基準：
+ *   status が '売切れ' / 'SOLD'、または stock_quantity <= 0
+ * ※ Product::search() の SELECT に p.stock_quantity が必要。
+ */
+function isSold(array $item): bool
+{
+    if (in_array((string) ($item['status'] ?? ''), ['売切れ', 'SOLD'], true)) {
+        return true;
+    }
+
+    return isset($item['stock_quantity'])
+        && (int) $item['stock_quantity'] <= 0;
+}
+
+
 $currentSort = currentSort($sort);
 
 
@@ -268,19 +295,42 @@ require_once __DIR__ . '/../includes/nav.php';
                 </div>
 
 
-                <!-- キーワード -->
+                <!-- コンディション -->
 
                 <fieldset class="search-field search-field--condition">
                     <legend>コンディション</legend>
                     <div class="condition-options">
                         <?php foreach ($productConditions as $conditionValue => $condition): ?>
                             <label class="condition-option">
-                                <input type="checkbox" name="condition[]" value="<?= h($conditionValue) ?>" <?= in_array($conditionValue, $selectedConditions, true) ? 'checked' : '' ?> >
+                                <input
+                                    type="checkbox"
+                                    name="condition[]"
+                                    value="<?= h($conditionValue) ?>"
+                                    <?= in_array($conditionValue, $selectedConditions, true) ? 'checked' : '' ?>
+                                >
                                 <span><?= h($condition['label'] ?? $conditionValue) ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
                 </fieldset>
+
+
+                <!-- SOLD表示切替 -->
+
+                <div class="search-field search-field--sold">
+
+                    <label class="condition-option">
+                        <input
+                            type="checkbox"
+                            name="sold"
+                            value="hide"
+                            <?= $hideSold ? 'checked' : '' ?>
+                        >
+                        <span>SOLD商品を非表示にする</span>
+                    </label>
+
+                </div>
+
 
                 <!-- キーワード -->
 
@@ -425,10 +475,9 @@ require_once __DIR__ . '/../includes/nav.php';
                 <div class="row prod-grid">
 
 
-                    <?php foreach (
-                        $result['items']
-                        as $item
-                    ): ?>
+                    <?php foreach ($result['items'] as $item): ?>
+
+                        <?php $sold = isSold($item); ?>
 
                         <div class="
                             col-6
@@ -438,7 +487,7 @@ require_once __DIR__ . '/../includes/nav.php';
 
                             <a
                                 href="product-detail.php?id=<?= (int) $item['product_id'] ?>"
-                                class="prod-card"
+                                class="prod-card<?= $sold ? ' is-sold' : '' ?>"
                             >
 
                                 <!-- 商品画像 -->
@@ -451,9 +500,7 @@ require_once __DIR__ . '/../includes/nav.php';
 
                                         <img
                                             src="<?= h($imageUrl) ?>"
-                                            alt="<?= h(
-                                                (string) $item['name']
-                                            ) ?>"
+                                            alt="<?= h((string) $item['name']) ?>"
                                             class="prod-image"
                                         >
 
@@ -469,13 +516,7 @@ require_once __DIR__ . '/../includes/nav.php';
                                     <?php endif; ?>
 
 
-                                    <?php if (
-                                        in_array(
-                                            (string) ($item['status'] ?? ''),
-                                            ['売切れ', 'SOLD'],
-                                            true
-                                        )
-                                    ): ?>
+                                    <?php if ($sold): ?>
 
                                         <span class="badge-sold">
                                             SOLD
@@ -483,8 +524,7 @@ require_once __DIR__ . '/../includes/nav.php';
 
                                     <?php elseif (
                                         !empty($item['status'])
-                                        && $item['status']
-                                            === 'new_arrival'
+                                        && $item['status'] === 'new_arrival'
                                     ): ?>
 
                                         <span class="badge-new">
@@ -502,24 +542,18 @@ require_once __DIR__ . '/../includes/nav.php';
 
                                     <p class="prod-name">
 
-                                        <?= h(
-                                            (string) $item['category_name']
-                                        ) ?>
+                                        <?= h((string) $item['category_name']) ?>
 
                                         /
 
-                                        <?= h(
-                                            (string) $item['name']
-                                        ) ?>
+                                        <?= h((string) $item['name']) ?>
 
                                     </p>
 
 
                                     <p class="prod-price">
 
-                                        <?= number_format(
-                                            (float) $item['price']
-                                        ) ?>円
+                                        <?= number_format((float) $item['price']) ?>円
 
                                         <span class="tax">
                                             (税込)
@@ -544,27 +578,17 @@ require_once __DIR__ . '/../includes/nav.php';
                 ================================================================
                 -->
 
-                <?php if (
-                    $result['total_pages'] > 1
-                ): ?>
+                <?php if ($result['total_pages'] > 1): ?>
 
                     <nav
                         class="pagination"
                         aria-label="ページネーション"
                     >
 
-                        <?php for (
-                            $p = 1;
-                            $p <= $result['total_pages'];
-                            $p++
-                        ): ?>
+                        <?php for ($p = 1; $p <= $result['total_pages']; $p++): ?>
 
                             <a
-                                href="<?= h(
-                                    buildQuery([
-                                        'page' => $p
-                                    ])
-                                ) ?>"
+                                href="<?= h(buildQuery(['page' => $p])) ?>"
                                 class="
                                     page-link
                                     <?= $p === $result['page']

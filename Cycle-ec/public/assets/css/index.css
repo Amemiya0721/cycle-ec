@@ -1,9 +1,9 @@
+
 /*
 将来的にアニメーションの導入をする
 jsと組み合わせ
-
 */
-
+ 
 :root {
   --navy: #12161f;
   --navy-2: #1a2130;
@@ -13,47 +13,47 @@ jsと組み合わせ
   --line: #e4e4e4;
   --off: #f6f6f4;
 }
-
+ 
 body {
   font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", -apple-system, "Segoe UI", sans-serif;
   color: var(--ink);
   overflow-x: hidden;
 }
-
+ 
 a {
   color: inherit;
   text-decoration: none;
 }
-
+ 
 section {
   padding: 56px 0;
 }
-
+ 
 section+section {
   border-top: 1px solid var(--line);
 }
-
+ 
 .section-head {
   margin-bottom: 24px;
 }
-
+ 
 .section-head h2 {
   font-size: 24px;
   letter-spacing: .04em;
   font-weight: 700;
 }
-
+ 
 .more-link {
   font-size: 13px;
   color: var(--sub);
   letter-spacing: .02em;
   white-space: nowrap;
 }
-
+ 
 .more-link:hover {
   color: var(--ink);
 }
-
+ 
 /* ---------- TOP BAR ---------- */
 .topbar {
   background: var(--navy);
@@ -61,19 +61,19 @@ section+section {
   font-size: 12px;
   height: 34px;
 }
-
+ 
 .topbar .container {
   height: 100%;
 }
-
+ 
 .topbar .shop-tag {
   letter-spacing: .03em;
 }
-
+ 
 .topbar a {
   font-size: 12px;
 }
-
+ 
 .cart-badge {
   background: var(--red);
   color: #fff;
@@ -82,7 +82,7 @@ section+section {
   font-size: 11px;
   margin-left: 4px;
 }
-
+ 
 /* ---------- HEADER ---------- */
 .main-header {
   background: var(--navy);
@@ -90,36 +90,36 @@ section+section {
   z-index: 1030;
   border-bottom: 1px solid #262c39;
 }
-
+ 
 .main-header .container {
   height: 82px;
 }
-
+ 
 .logo {
   display: flex;
   flex-direction: column;
   line-height: 1;
   white-space: nowrap;
 }
-
+ 
 .logo .logo-main {
   font-size: 26px;
   font-weight: 800;
   letter-spacing: .06em;
   color: #fff;
 }
-
+ 
 .logo .logo-sub {
   font-size: 10px;
   letter-spacing: .18em;
   color: #9aa0ab;
   margin-top: 4px;
 }
-
+ 
 .gnav ul {
   white-space: nowrap;
 }
-
+ 
 .gnav a {
   font-size: 14px;
   letter-spacing: .02em;
@@ -127,7 +127,7 @@ section+section {
   color: #fff;
   position: relative;
 }
-
+ 
 .gnav a::after {
   content: "";
   position: absolute;
@@ -139,11 +139,11 @@ section+section {
   transform: scaleX(0);
   transition: transform .2s;
 }
-
+ 
 .gnav a:hover::after {
   transform: scaleX(1);
 }
-
+ 
 .search-form {
   align-items: center;
   background: #fff;
@@ -151,7 +151,7 @@ section+section {
   overflow: hidden;
   flex-shrink: 0;
 }
-
+ 
 .search-form input {
   border: none;
   outline: none;
@@ -160,7 +160,7 @@ section+section {
   width: 180px;
   font-size: 13px;
 }
-
+ 
 .search-form .btn {
   background: var(--ink);
   color: #fff;
@@ -169,7 +169,7 @@ section+section {
   width: 38px;
   padding: 0;
 }
-
+ 
 .hamburger {
   border: none;
   background: none;
@@ -177,7 +177,7 @@ section+section {
   width: 32px;
   height: 32px;
 }
-
+ 
 .navbar-toggler-icon-custom,
 .navbar-toggler-icon-custom::before,
 .navbar-toggler-icon-custom::after {
@@ -189,29 +189,29 @@ section+section {
   height: 2px;
   background: #fff;
 }
-
+ 
 .navbar-toggler-icon-custom {
   top: 15px;
 }
-
+ 
 .navbar-toggler-icon-custom::before {
   top: -8px;
 }
-
+ 
 .navbar-toggler-icon-custom::after {
   top: 8px;
 }
-
+ 
 .hamburger:focus {
   box-shadow: none;
 }
-
+ 
 /* ---------- MOBILE OFFCANVAS ---------- */
 .mobile-nav {
   background: var(--navy);
   color: #fff;
 }
-
+ 
 .mobile-nav a {
   display: block;
   padding: 14px 4px;
@@ -219,15 +219,15 @@ section+section {
   font-size: 14px;
   border-bottom: 1px solid #262c39;
 }
-
+ 
 .mobile-search input {
   border-radius: 0;
 }
-
+ 
 .mobile-search .btn {
   border-radius: 0;
 }
-
+ 
 /* ---------- HERO ---------- */
 .hero {
   position: relative;
@@ -241,7 +241,7 @@ section+section {
   padding: 0;
   border-top: none;
 }
-
+ 
 .hero-bike {
   position: absolute;
   right: -40px;
@@ -252,13 +252,13 @@ section+section {
   opacity: .9;
   pointer-events: none;
 }
-
+ 
 .hero-inner {
   position: relative;
   z-index: 2;
   max-width: 560px;
 }
-
+ 
 .hero-inner h1 {
   font-size: clamp(28px, 3.2vw, 40px);
   line-height: 1.35;
@@ -266,37 +266,37 @@ section+section {
   letter-spacing: .02em;
   margin-bottom: 20px;
 }
-
+ 
 .hero-inner p {
   font-size: 14px;
   line-height: 1.9;
   color: #dcdfe4;
   margin-bottom: 32px;
 }
-
+ 
 .btn-hero {
   padding: 14px 28px;
   font-size: 13px;
   letter-spacing: .08em;
   border-radius: 0;
 }
-
+ 
 .btn-outline-light.btn-hero {
   background: rgba(255, 255, 255, .05);
 }
-
+ 
 /* ---------- NEWS ---------- */
 .news-bar {
   background: var(--off);
   border-bottom: 1px solid var(--line);
   height: 44px;
 }
-
+ 
 .news-bar .container {
   height: 100%;
   font-size: 13px;
 }
-
+ 
 .news-label {
   background: var(--ink);
   color: #fff;
@@ -305,327 +305,230 @@ section+section {
   padding: 3px 10px;
   flex-shrink: 0;
 }
-
+ 
 .news-text {
   color: #333;
 }
-
+ 
 .news-date {
   color: var(--sub);
   margin-right: 10px;
 }
-
-
+ 
 /* ========================================
    RECOMMEND / OVERHAUL PICKS
 ======================================== */
-
+ 
 #recommend {
   padding: 80px 0;
   background: #f5f5f3;
 }
-
-
-/* ------------------------------
-   Header
------------------------------- */
-
+ 
+/* Header */
 #recommend .section-head {
   margin-bottom: 28px;
 }
-
+ 
 #recommend .section-label {
   display: block;
-
   margin-bottom: 4px;
-
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.18em;
-
   color: #888;
 }
-
+ 
 #recommend h2 {
   margin: 0;
-
   font-size: 28px;
   font-weight: 700;
   letter-spacing: 0.04em;
-
   color: #222;
 }
-
-
-/* ------------------------------
-   Swiper
------------------------------- */
-
+ 
+/* Swiper */
 .recommend-swiper {
   position: relative;
-
   padding: 0 4px 45px;
 }
-
-
-/* ------------------------------
-   Card
------------------------------- */
-
+ 
+/* Card */
 .recommend-swiper .product-card {
   display: block;
-
   height: 100%;
-
   overflow: hidden;
-
   background: #fff;
-
   border: 1px solid #ddd;
-
   color: #222;
   text-decoration: none;
-
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease;
 }
-
+ 
 .recommend-swiper .product-card:hover {
   transform: translateY(-5px);
-
-  box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.10);
 }
-
-
-/* ------------------------------
-   Image
------------------------------- */
-
+ 
+/* Image */
 .recommend-swiper .product-image {
   position: relative;
-
   aspect-ratio: 1 / 1;
-
   overflow: hidden;
-
   background: #e9e9e7;
 }
-
+ 
 .recommend-swiper .product-image img {
   display: block;
-
   width: 100%;
   height: 100%;
-
   object-fit: cover;
-
   transition: transform 0.4s ease;
 }
-
+ 
 .recommend-swiper .product-card:hover img {
   transform: scale(1.04);
 }
-
-
-/* ------------------------------
-   PICK UP badge
------------------------------- */
-
+ 
+/* PICK UP badge */
 .recommend-swiper .product-badge {
   position: absolute;
-
   top: 12px;
   left: 12px;
-
   z-index: 2;
-
   padding: 5px 9px;
-
   background: #222;
   color: #fff;
-
   font-size: 10px;
   font-weight: 700;
-
   letter-spacing: 0.12em;
 }
-
-
-/* ------------------------------
-   Product Info
------------------------------- */
-
+ 
+/* Product Info */
 .recommend-swiper .product-info {
   padding: 16px 16px 18px;
 }
-
+ 
 .recommend-swiper .product-category {
   margin-bottom: 6px;
-
   font-size: 10px;
   font-weight: 700;
-
   letter-spacing: 0.12em;
-
   color: #999;
 }
-
+ 
 .recommend-swiper .product-name {
   margin: 0 0 12px;
-
   font-size: 15px;
   font-weight: 600;
   line-height: 1.5;
-
   color: #222;
-
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-
   overflow: hidden;
 }
-
+ 
 .recommend-swiper .product-price {
   font-size: 18px;
   font-weight: 700;
-
   letter-spacing: 0.02em;
-
   color: #222;
 }
-
-
-/* ------------------------------
-   Navigation Button
------------------------------- */
-
+ 
+/* Navigation Button */
 .recommend-swiper .swiper-button-prev,
 .recommend-swiper .swiper-button-next {
   width: 44px;
   height: 44px;
-
   margin-top: -30px;
-
   background: #fff;
-
   border: 1px solid #ccc;
-
   color: #222;
-
   transition:
     background 0.2s ease,
     color 0.2s ease;
 }
-
+ 
 .recommend-swiper .swiper-button-prev:hover,
 .recommend-swiper .swiper-button-next:hover {
   background: #222;
   color: #fff;
 }
-
-
-/* Swiper default arrow */
-
+ 
 .recommend-swiper .swiper-button-prev::after,
 .recommend-swiper .swiper-button-next::after {
   font-size: 14px;
-
   font-weight: 700;
 }
-
-
-/* ------------------------------
-   Pagination
------------------------------- */
-
+ 
+/* Pagination */
 .recommend-swiper .swiper-pagination {
   bottom: 5px;
 }
-
+ 
 .recommend-swiper .swiper-pagination-bullet {
   width: 6px;
   height: 6px;
-
   margin: 0 4px !important;
-
   background: #aaa;
-
   opacity: 1;
 }
-
+ 
 .recommend-swiper .swiper-pagination-bullet-active {
   width: 20px;
-
   border-radius: 3px;
-
   background: #222;
 }
-
-
-/* ------------------------------
-   More Link
------------------------------- */
-
+ 
+/* More Link */
 #recommend .more-link {
   color: #555;
-
   font-size: 13px;
   font-weight: 600;
-
   text-decoration: none;
-
   white-space: nowrap;
 }
-
+ 
 #recommend .more-link:hover {
   color: #000;
 }
-
-
-/* ========================================
-   MOBILE
-======================================== */
-
+ 
+/* MOBILE */
 @media (max-width: 767px) {
-
+ 
   #recommend {
     padding: 60px 0;
   }
-
+ 
   #recommend h2 {
     font-size: 23px;
   }
-
+ 
   .recommend-swiper {
     padding-left: 0;
     padding-right: 0;
   }
-
+ 
   .recommend-swiper .swiper-button-prev,
   .recommend-swiper .swiper-button-next {
     display: none;
   }
-
+ 
   .recommend-swiper .product-info {
     padding: 14px;
   }
-
+ 
   .recommend-swiper .product-name {
     font-size: 14px;
   }
-
+ 
   .recommend-swiper .product-price {
     font-size: 16px;
   }
 }
-
-
-
-
-
+ 
 /* ---------- CATEGORY ---------- */
 .cat-title {
   text-align: center;
@@ -634,23 +537,21 @@ section+section {
   font-weight: 700;
   margin-bottom: 32px;
 }
-
+ 
 .cat-card {
   position: relative;
   display: flex;
   align-items: center;      /* 縦中央 */
   justify-content: center;  /* 横中央 */
-
   width: 100%;
   aspect-ratio: 5 / 6;      /* 全デバイス共通の縦長比率 */
   border-radius: 4px;
   overflow: hidden;
   isolation: isolate;
-
   color: #fff;
   text-decoration: none;
 }
-
+ 
 /* 画像を全面に敷く */
 .cat-card .cat-icon {
   position: absolute;
@@ -663,7 +564,7 @@ section+section {
   background: #333;
   display: block;
 }
-
+ 
 .cat-card .cat-icon img {
   position: absolute;
   inset: 0;
@@ -675,7 +576,7 @@ section+section {
   object-position: center;
   display: block;
 }
-
+ 
 /* 暗いフィルター */
 .cat-card::after {
   content: "";
@@ -684,21 +585,18 @@ section+section {
   z-index: 1;
   background: linear-gradient(180deg, rgba(0, 0, 0, .15), rgba(0, 0, 0, .55));
 }
-
+ 
 /* 中央のラベル */
 .cat-jp {
   position: relative;
   z-index: 2;
-
   max-width: calc(100% - 16px);
   padding: clamp(8px, 1.8vw, 12px) clamp(14px, 3vw, 24px);
-
   background: rgba(20, 20, 20, .55);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, .2);
   border-radius: 12px;
-
   font-size: clamp(13px, 3.4vw, 16px);
   font-weight: 700;
   letter-spacing: .04em;
@@ -706,56 +604,61 @@ section+section {
   text-align: center;
   overflow-wrap: anywhere;
 }
-
+ 
 .cat-more {
   text-align: center;
   margin-top: 22px;
 }
-
+ 
 .cat-more a {
   font-size: 13px;
   color: var(--sub);
   border-bottom: 1px solid var(--sub);
   padding-bottom: 2px;
 }
-
-
+ 
 /* ---------- PRODUCT CARD ---------- */
+/* a タグは既定で inline のため block 化し、幅を親列に合わせる */
 .prod-card {
+  display: block;
+  width: 100%;
+  min-width: 0;
   border: 1px solid var(--line);
   background: #fff;
   transition: box-shadow .2s, transform .2s;
   position: relative;
   height: 100%;
 }
-
+ 
 .prod-card:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
   transform: translateY(-2px);
 }
-
+ 
 .prod-thumb {
   position: relative;
-  aspect-ratio: 1/1;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
   background: linear-gradient(150deg, #e9e9e6, #cfd0cc);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
 }
-
+ 
 .prod-thumb .prod-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-
+ 
 .prod-thumb .thumb-icon {
   font-size: 34px;
   opacity: .35;
 }
-
+ 
 .badge-new,
 .badge-down {
   position: absolute;
@@ -769,15 +672,15 @@ section+section {
   z-index: 2;
   border-radius: 0;
 }
-
+ 
 .badge-new {
   background: var(--red);
 }
-
+ 
 .badge-down {
   background: var(--ink);
 }
-
+ 
 .rank-badge {
   position: absolute;
   bottom: 8px;
@@ -788,7 +691,7 @@ section+section {
   padding: 3px 8px;
   letter-spacing: .03em;
 }
-
+ 
 .off-badge {
   position: absolute;
   bottom: 8px;
@@ -806,11 +709,11 @@ section+section {
   font-weight: 700;
   line-height: 1.15;
 }
-
+ 
 .prod-info {
   padding: 14px 12px 16px;
 }
-
+ 
 .prod-name {
   font-size: clamp(11px, 1vw, 12.5px);
   line-height: 1.5;
@@ -819,38 +722,55 @@ section+section {
   margin-bottom: 8px;
   color: #333;
 }
-
+ 
 .prod-price {
   font-size: 16px;
   font-weight: 700;
 }
-
+ 
 .prod-price .tax {
   font-size: 10px;
   color: var(--sub);
   font-weight: 400;
   margin-left: 4px;
 }
-
+ 
 .price-old {
   font-size: 12px;
   color: var(--sub);
   text-decoration: line-through;
   margin-right: 6px;
 }
-
+ 
 .price-new {
   font-size: 17px;
   font-weight: 700;
   color: var(--red);
 }
-
+ 
 .tax {
   font-size: 10px;
   color: var(--sub);
   margin-left: 4px;
 }
-
+ 
+/* ---------- 新着・値下げ商品グリッドの幅固定 ----------
+   col-lg(数字なし)は件数が少ないと1枚が広がるため、
+   PCでは1列=20%(5列表示)に固定する。4列にしたい場合は 25% に変更。 */
+@media (min-width: 992px) {
+  #new-grid > [class*="col-"],
+  #down-grid > [class*="col-"] {
+    flex: 0 0 auto;
+    width: 20%;
+  }
+ 
+  /* 「商品がありません」メッセージだけは全幅 */
+  #new-grid > .col-12,
+  #down-grid > .col-12 {
+    width: 100%;
+  }
+}
+ 
 /* ---------- CONDITION ---------- */
 .cond-title {
   text-align: center;
@@ -859,34 +779,34 @@ section+section {
   font-weight: 700;
   margin-bottom: 36px;
 }
-
+ 
 .cond-item {
   padding: 0 20px;
   text-align: center;
 }
-
+ 
 .cond-rank {
   font-size: 20px;
   font-weight: 800;
   margin-bottom: 10px;
 }
-
+ 
 .cond-item.junk .cond-rank {
   color: var(--sub);
 }
-
+ 
 .cond-desc {
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 8px;
 }
-
+ 
 .cond-sub {
   font-size: 11.5px;
   color: var(--sub);
   line-height: 1.7;
 }
-
+ 
 .cond-warn {
   display: inline-block;
   margin-top: 10px;
@@ -895,40 +815,24 @@ section+section {
   border: 1px solid var(--red);
   padding: 2px 8px;
 }
-
-@media(min-width:992px) {
+ 
+@media (min-width: 992px) {
   .cond-item {
     border-left: 1px solid var(--line);
   }
-
+ 
   .cond-item:first-child {
     border-left: none;
   }
 }
-
-@media(max-width:991px) {
+ 
+@media (max-width: 991px) {
   .cond-item {
     border-top: 1px solid var(--line);
     padding-top: 20px;
   }
 }
-/* ---------- price down ---------- */
-
-.prod-thumb {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-}
-
-.prod-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-
+ 
 /* ---------- ABOUT / INFO ---------- */
 h3 {
   font-size: 16px;
@@ -936,27 +840,27 @@ h3 {
   margin-bottom: 16px;
   letter-spacing: .04em;
 }
-
+ 
 section p {
   font-size: 13px;
   line-height: 2;
   color: #444;
   margin-bottom: 18px;
 }
-
+ 
 .detail-link {
   font-size: 12.5px;
   border: 1px solid var(--ink);
   padding: 9px 18px;
   display: inline-block;
 }
-
+ 
 .info-item {
   display: flex;
   gap: 12px;
   align-items: flex-start;
 }
-
+ 
 .info-icon {
   width: 34px;
   height: 34px;
@@ -968,53 +872,53 @@ section p {
   justify-content: center;
   font-size: 14px;
 }
-
+ 
 .info-item h4 {
   font-size: 13.5px;
   font-weight: 700;
   margin-bottom: 4px;
 }
-
+ 
 .info-item p {
   font-size: 11.5px;
   color: var(--sub);
   line-height: 1.6;
   margin-bottom: 0;
 }
-
+ 
 /* ---------- FOOTER ---------- */
 footer {
   background: var(--navy);
   color: #c9cdd4;
   padding-top: 56px;
 }
-
+ 
 .footer-grid {
   padding-bottom: 40px;
   border-bottom: 1px solid #2a2f3b;
 }
-
+ 
 .footer-logo {
   font-size: 20px;
   font-weight: 800;
   color: #fff;
   letter-spacing: .05em;
 }
-
+ 
 .footer-sub {
   font-size: 10px;
   letter-spacing: .14em;
   color: #8a8f99;
   margin: 6px 0 14px;
 }
-
+ 
 .footer-desc {
   font-size: 12px;
   line-height: 1.8;
   color: #9aa0ab;
   margin-bottom: 16px;
 }
-
+ 
 .sns a {
   width: 30px;
   height: 30px;
@@ -1026,39 +930,39 @@ footer {
   font-size: 12px;
   color: #c9cdd4;
 }
-
+ 
 .sns a:hover {
   background: #fff;
   color: var(--navy);
 }
-
+ 
 .footer-col h5 {
   color: #fff;
   font-size: 13px;
   letter-spacing: .05em;
   margin-bottom: 16px;
 }
-
+ 
 .footer-col li {
   margin-bottom: 10px;
 }
-
+ 
 .footer-col a {
   font-size: 12.5px;
   color: #9aa0ab;
 }
-
+ 
 .footer-col a:hover {
   color: #fff;
 }
-
+ 
 .news-desc {
   font-size: 12px;
   color: #9aa0ab;
   margin-bottom: 14px;
   line-height: 1.7;
 }
-
+ 
 .news-input-row input {
   border: 1px solid #454b58;
   background: var(--navy-2);
@@ -1066,94 +970,93 @@ footer {
   border-radius: 0;
   font-size: 12.5px;
 }
-
+ 
 .news-input-row input::placeholder {
   color: #7d8290;
 }
-
+ 
 .news-input-row .btn {
   border-radius: 0;
   font-size: 12.5px;
   font-weight: 700;
 }
-
+ 
 .footer-bottom {
   text-align: center;
   padding: 22px 0;
   font-size: 11px;
   color: #767c88;
 }
-
+ 
 /* ---------- RESPONSIVE ---------- */
-@media(max-width:991px) {
+@media (max-width: 991px) {
   .main-header .container {
     height: 60px;
   }
-
+ 
   .logo .logo-main {
     font-size: 20px;
   }
-
+ 
   .hero {
     height: 420px;
   }
-
+ 
   .hero-inner h1 {
     font-size: 28px;
   }
-
+ 
   .hero-bike {
     width: min(52vw, 340px);
     height: auto;
     opacity: .5;
   }
-
+ 
   section {
     padding: 40px 0;
   }
 }
-
-@media(max-width:576px) {
+ 
+@media (max-width: 576px) {
   .hero {
     height: 380px;
   }
-
+ 
   .hero-bike {
     right: -72px;
     bottom: -8px;
     width: 72vw;
   }
-
-
+ 
   .cat-card {
     aspect-ratio: 1 / 1.15;
   }
-
+ 
   .prod-info {
     padding: 10px 9px 12px;
   }
-
+ 
   .prod-name {
     height: 34px;
   }
-
+ 
   .prod-price {
     font-size: 14px;
   }
-
+ 
   .hero-inner p {
     font-size: 13px;
   }
-
+ 
   .hero-cta {
     flex-direction: column;
   }
-
+ 
   .btn-hero {
     text-align: center;
   }
 }
-
+ 
 /* ==========================================================
    ほわっとアニメーション（fuwatto animation system）
    -----------------------------------------------------------
@@ -1161,17 +1064,17 @@ footer {
    class="fuwa" / class="fuwa-item" と data-fuwa 系属性を
    付与したうえで IntersectionObserver により is-visible を
    トグルする。HTML側の書き換えは不要。
-
+ 
    対象（JS側の TARGET_MAP と対応）:
-     .hero-inner            → 個別（大きめ・長め）
-     .section-head          → 個別（中くらい）
-     .cat-card               → グループ（カテゴリのスタガー）
-     .prod-card               → グループ（商品カードのスタガー）
-     .cond-item               → グループ（状態ランクのスタガー）
-     .info-item                → グループ（店舗情報のスタガー）
-     .footer-col               → グループ（フッター列のスタガー）
+     .hero-inner      → 個別（大きめ・長め）
+     .section-head    → 個別（中くらい）
+     .cat-card        → グループ（カテゴリのスタガー）
+     .prod-card       → グループ（商品カードのスタガー）
+     .cond-item       → グループ（状態ランクのスタガー）
+     .info-item       → グループ（店舗情報のスタガー）
+     .footer-col      → グループ（フッター列のスタガー）
    ========================================================== */
-
+ 
 :root {
   --fuwa-duration-sm: .6s;
   --fuwa-duration-md: .8s;
@@ -1181,7 +1084,7 @@ footer {
   --fuwa-blur: 6px;
   --fuwa-blur-sm: 4px;
 }
-
+ 
 .fuwa,
 .fuwa-item {
   opacity: 0;
@@ -1193,39 +1096,39 @@ footer {
     filter var(--fuwa-duration-md) var(--fuwa-easing);
   will-change: opacity, transform, filter;
 }
-
+ 
 /* Hero・大見出しなど：長め＋わずかなscaleを添えて重厚感を出す */
 .fuwa--lg {
   transition-duration: var(--fuwa-duration-lg);
   transform: translateY(var(--fuwa-translate)) scale(.98);
 }
-
+ 
 /* バッジ・小見出しなど：短め＋blur浅め */
 .fuwa--sm {
   transition-duration: var(--fuwa-duration-sm);
   filter: blur(var(--fuwa-blur-sm));
 }
-
+ 
 .fuwa.is-visible,
 .fuwa-item.is-visible {
   opacity: 1;
   transform: translateY(0);
   filter: blur(0);
 }
-
+ 
 .fuwa--lg.is-visible {
   transform: translateY(0) scale(1);
 }
-
+ 
 /* prod-card / cat-card は既存のhoverアニメーションと干渉しないよう、
    fuwa側のtransitionにhover用プロパティを追加せず共存させる */
 .prod-card.fuwa-item:hover,
 .cat-card.fuwa-item:hover {
   transform: translateY(-2px);
 }
-
+ 
 @media (prefers-reduced-motion: reduce) {
-
+ 
   .fuwa,
   .fuwa-item,
   .fuwa--lg {

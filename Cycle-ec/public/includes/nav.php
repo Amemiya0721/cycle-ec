@@ -10,7 +10,13 @@ require_once __DIR__ . '/../../src/Category.php';
 $baseUrl = $config['app']['base_url'];
 $isLoggedIn = !empty($_SESSION['user_id']);
 $loggedInName = (string) ($_SESSION['user_name'] ?? '');
+
+// カートの商品数を取得
+$cart = $_SESSION['cart'] ?? [];
+$cartCount = is_array($cart) ? count($cart) : 0;
+
 $categories = [];
+
 try {
   $categories = Category::all();
 } catch (Throwable $exception) {
@@ -45,21 +51,18 @@ try {
       class="search-form d-none d-lg-flex"
       id="search-form"
       action="<?= $baseUrl ?>pages/products.php"
-      method="GET"
-    >
+      method="GET">
       <input
         type="text"
         class="form-control"
         name="keyword"
         placeholder="キーワードで検索"
-        id="search-input"
-      >
+        id="search-input">
 
       <button
         type="submit"
         class="btn"
-        aria-label="検索"
-      >
+        aria-label="検索">
         🔍
       </button>
     </form>
@@ -88,10 +91,11 @@ try {
         <li>
           <a
             href="<?= $baseUrl ?>pages/cart.php"
-            id="cart-link-top"
-          >
+            id="cart-link-top">
             カート
-            <span class="cart-badge" id="cart-count-top">0</span>
+            <span class="cart-badge" id="cart-count-top">
+              <?= $cartCount ?>
+            </span>
           </a>
         </li>
 
@@ -104,8 +108,7 @@ try {
         <li>
           <a
             href="<?= $baseUrl ?>pages/products.php"
-            data-cat="all"
-          >
+            data-cat="all">
             商品一覧
           </a>
         </li>
@@ -141,8 +144,7 @@ try {
       id="hamburger"
       aria-label="メニュー"
       data-bs-toggle="offcanvas"
-      data-bs-target="#mobileNav"
-    >
+      data-bs-target="#mobileNav">
       <span class="navbar-toggler-icon-custom"></span>
     </button>
 
@@ -157,15 +159,13 @@ try {
   class="offcanvas offcanvas-end mobile-nav"
   tabindex="-1"
   id="mobileNav"
-  aria-labelledby="mobileNavLabel"
->
+  aria-labelledby="mobileNavLabel">
 
   <div class="offcanvas-header">
 
     <h5
       class="offcanvas-title"
-      id="mobileNavLabel"
-    >
+      id="mobileNavLabel">
       OVERHAUL
     </h5>
 
@@ -173,8 +173,7 @@ try {
       type="button"
       class="btn-close"
       data-bs-dismiss="offcanvas"
-      aria-label="閉じる"
-    ></button>
+      aria-label="閉じる"></button>
 
   </div>
 
@@ -195,13 +194,11 @@ try {
       <li>
         <a
           href="<?= $baseUrl ?>pages/cart.php"
-          id="mobile-cart-link"
-        >
+          id="mobile-cart-link">
           カート
           <span
             class="cart-badge"
-            id="cart-count-mobile"
-          >
+            id="cart-count-mobile">
             0
           </span>
         </a>
@@ -219,8 +216,7 @@ try {
       <li>
         <a
           href="<?= $baseUrl ?>pages/products.php"
-          data-cat="all"
-        >
+          data-cat="all">
           商品一覧
         </a>
       </li>

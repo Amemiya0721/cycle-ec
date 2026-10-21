@@ -3,24 +3,14 @@
    -----------------------------------------------------------
    既存 style.css（navy/redテーマ）のトークンをそのまま利用し、
    商品一覧ページ専用のコンポーネント（検索フォーム／件数表示／
-   ページネーション）のみをここに追加する。
+   商品サムネイル／SOLD表示／ページネーション）のみをここに追加する。
    ========================================================== */
 
 .products-section {
   padding: 40px 0 80px;
 }
-.prod-thumb {
-    position: relative;
-    overflow: hidden;
-    aspect-ratio: 1 / 1;
-}
 
-.prod-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
+
 /* ---------- 検索フォーム ---------- */
 .search-form-panel {
   display: flex;
@@ -53,12 +43,44 @@
   color: var(--ink);
   min-width: 160px;
 }
+
+/* チェックボックスはテキスト入力用のスタイルを打ち消す
+   （.search-field input より後に置くこと） */
+.search-field input[type="checkbox"] {
+  min-width: 0;
+  width: auto;
+  padding: 0;
+  border: 0;
+}
+
 .search-field--keyword { flex: 1 1 240px; }
 .search-field--keyword input { width: 100%; }
+
 .search-field--condition { min-width: 100%; }
-.search-field--condition legend { float: none; width: auto; margin: 0; color: var(--sub); font-size: 12.5px; }
-.condition-options { display: flex; flex-wrap: wrap; gap: 8px 16px; }
-.condition-option { display: inline-flex; align-items: center; gap: 5px; color: var(--ink); cursor: pointer; }
+.search-field--condition legend {
+  float: none;
+  width: auto;
+  margin: 0;
+  color: var(--sub);
+  font-size: 12.5px;
+}
+
+.search-field--sold {
+  justify-content: flex-end;
+}
+
+.condition-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.condition-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  cursor: pointer;
+}
 
 .search-submit {
   background: var(--ink);
@@ -66,6 +88,7 @@
   border: none;
   cursor: pointer;
 }
+
 
 /* ---------- 検索結果件数 ---------- */
 .result-count {
@@ -82,7 +105,8 @@
   border: 1px dashed var(--line);
 }
 
-/* ---------- 商品グリッド行間調整 ---------- */
+
+/* ---------- 商品グリッド ---------- */
 .prod-grid {
   --bs-gutter-x: 20px;
   --bs-gutter-y: 20px;
@@ -91,6 +115,67 @@
 .prod-grid > [class^="col-"] {
   margin-bottom: 4px;
 }
+
+.prod-thumb {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+}
+
+.prod-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+
+/* ---------- SOLD表示 ---------- */
+
+/* SOLDバッジ */
+.badge-sold {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 3px 12px;
+  background: #c62828;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* SOLD商品：画像に白い半透明のオーバーレイ */
+.prod-card.is-sold .prod-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+.prod-card.is-sold:hover .prod-thumb::after {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.prod-card.is-sold .prod-image,
+.prod-card.is-sold .thumb-icon {
+  filter: grayscale(0.8);
+}
+
+/* SOLD商品：テキストを控えめに */
+.prod-card.is-sold .prod-name,
+.prod-card.is-sold .prod-price {
+  color: #888;
+}
+.prod-card.is-sold .prod-price {
+  text-decoration: line-through;
+}
+
 
 /* ---------- ページネーション ---------- */
 .pagination {
@@ -118,6 +203,8 @@
   border-color: var(--ink);
 }
 
+
+/* ---------- スマホ ---------- */
 @media (max-width: 576px) {
   .search-form-panel {
     flex-direction: column;
@@ -128,8 +215,18 @@
     min-width: 0;
     width: 100%;
   }
+  .search-field input[type="checkbox"] {
+    width: auto;
+  }
   .search-submit {
     width: 100%;
     text-align: center;
+  }
+
+  .badge-sold {
+    top: 6px;
+    left: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
   }
 }
