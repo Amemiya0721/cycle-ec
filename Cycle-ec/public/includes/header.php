@@ -8,6 +8,7 @@ $baseUrl = $config['app']['base_url'];
 
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,26 +18,22 @@ $baseUrl = $config['app']['base_url'];
     <!-- Bootstrap CSS -->
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+        rel="stylesheet">
 
     <!-- 共通CSS -->
     <link
         rel="stylesheet"
-        href="<?= $baseUrl ?>assets/css/style.css"
-    >
+        href="<?= $baseUrl ?>assets/css/style.css">
 
     <link
         rel="stylesheet"
-        href="<?= $baseUrl ?>assets/css/nav.css"
-    >
+        href="<?= $baseUrl ?>assets/css/nav.css">
 
     <?php if (!empty($pageCss)): ?>
         <!-- ページ固有CSS -->
         <link
             rel="stylesheet"
-            href="<?= $baseUrl ?>assets/css/<?= htmlspecialchars($pageCss, ENT_QUOTES, 'UTF-8') ?>"
-        >
+            href="<?= $baseUrl ?>assets/css/<?= htmlspecialchars($pageCss, ENT_QUOTES, 'UTF-8') ?>">
     <?php endif; ?>
 
     <?php if (isset($pageCssExtras) && is_array($pageCssExtras)): ?>
@@ -48,9 +45,9 @@ $baseUrl = $config['app']['base_url'];
     <?php endif; ?>
 
     <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"
->
-</head>
-
-<body>
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <!-- Cookie案内用CSS -->
+    <link
+        rel="stylesheet"
+        href="<?= $baseUrl ?>assets/css/cookie-banner.css">

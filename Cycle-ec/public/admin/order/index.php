@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'status' => $returnStatus,
         'keyword' => $returnKeyword,
         'page' => $returnPage > 1 ? (string) $returnPage : '',
-    ], static fn ($value): bool => $value !== '');
+    ], static fn($value): bool => $value !== '');
     $returnUrl = 'index.php' . ($returnParams ? '?' . http_build_query($returnParams) : '');
     header('Location: ' . $returnUrl, true, 303);
     exit;
@@ -117,9 +117,9 @@ try {
     $errorMessage = '注文一覧の取得に失敗しました。';
 }
 
-$url = static fn (array $params): string => 'index.php' . (($q = http_build_query(array_filter(
+$url = static fn(array $params): string => 'index.php' . (($q = http_build_query(array_filter(
     $params,
-    static fn ($v): bool => $v !== '' && $v !== null
+    static fn($v): bool => $v !== '' && $v !== null
 ))) !== '' ? '?' . $q : '');
 
 $allCount = array_sum($counts);
@@ -130,7 +130,10 @@ $breadcrumbs = [['label' => '注文管理']];
 require __DIR__ . '/../includes/header.php';
 ?>
 <div class="admin-page-header">
-    <div><h1>注文管理</h1><p class="text-muted mb-0">誰が購入し、どこへ送るかを確認します。</p></div>
+    <div>
+        <h1>注文管理</h1>
+        <p class="text-muted mb-0">誰が購入し、どこへ送るかを確認します。</p>
+    </div>
 </div>
 <?php if (isset($errorMessage)): ?><div class="alert alert-danger"><?= h($errorMessage) ?></div><?php endif; ?>
 <?php if ($actionMessage !== null): ?><div class="alert alert-<?= h((string) $actionMessage['type']) ?>" role="status"><?= h((string) $actionMessage['text']) ?></div><?php endif; ?>
@@ -153,61 +156,107 @@ require __DIR__ . '/../includes/header.php';
     </div>
 </form>
 
-<div class="admin-card bg-white"><div class="table-responsive"><table class="table admin-table table-hover align-middle mb-0">
-<thead><tr><th>注文番号</th><th>注文日時</th><th>購入者</th><th>送付先（受取人）</th><th class="text-end">合計</th><th>ステータス</th><th>詳細</th><th>操作</th></tr></thead>
-<tbody>
-<?php foreach ($result['items'] as $o): ?>
-    <tr>
-        <td>#<?= (int) $o['order_id'] ?></td>
-        <td><?= h((string) $o['ordered_at']) ?></td>
-        <td><?= h((string) $o['buyer_name']) ?><br><small class="text-muted"><?= h((string) $o['buyer_email']) ?></small></td>
-        <td><?= h((string) $o['shipping_recipient_name']) ?> 様<br><small class="text-muted"><?= h((string) $o['shipping_prefecture'] . $o['shipping_city']) ?></small></td>
-        <td class="text-end"><?= number_format((float) $o['total_price']) ?>円<br><small class="text-muted"><?= (int) $o['item_count'] ?>点</small></td>
-        <td><?= h((string) $o['status']) ?></td>
-        <td><a class="btn btn-sm btn-outline-primary" href="order-detail.php?id=<?= (int) $o['order_id'] ?>">詳細</a></td>
-        <td>
-            <?php if ($o['status'] === Order::STATUS_ORDERED): ?>
-                <div class="d-flex flex-column flex-sm-row gap-1">
-                    <form method="post" class="m-0">
-                        <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
-                        <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
-                        <input type="hidden" name="target_status" value="<?= h(Order::STATUS_SHIPPED) ?>">
-                        <input type="hidden" name="return_status" value="<?= h($status) ?>">
-                        <input type="hidden" name="return_keyword" value="<?= h($keyword) ?>">
-                        <input type="hidden" name="return_page" value="<?= (int) $result['page'] ?>">
-                        <button class="btn btn-sm btn-success text-nowrap w-100" type="submit">発送済みにする</button>
-                    </form>
-                    <form method="post" class="m-0" onsubmit="return confirm('注文 #<?= (int) $o['order_id'] ?> をキャンセルします。在庫を復元します。よろしいですか？');">
-                        <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
-                        <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
-                        <input type="hidden" name="target_status" value="<?= h(Order::STATUS_CANCELED) ?>">
-                        <input type="hidden" name="return_status" value="<?= h($status) ?>">
-                        <input type="hidden" name="return_keyword" value="<?= h($keyword) ?>">
-                        <input type="hidden" name="return_page" value="<?= (int) $result['page'] ?>">
-                        <button class="btn btn-sm btn-outline-danger text-nowrap w-100" type="submit">キャンセルする</button>
-                    </form>
-                </div>
-            <?php elseif ($o['status'] === Order::STATUS_SHIPPED): ?>
-                <span class="badge text-bg-success">発送済み</span>
-            <?php elseif ($o['status'] === Order::STATUS_CANCELED): ?>
-                <span class="badge text-bg-secondary">キャンセル済み</span>
-            <?php else: ?>
-                <span class="text-muted">操作できません</span>
-            <?php endif; ?>
-        </td>
-    </tr>
-<?php endforeach; ?>
-<?php if (!$result['items']): ?><tr><td colspan="8" class="text-center text-muted py-4">該当する注文はありません。</td></tr><?php endif; ?>
-</tbody></table></div></div>
+<div class="admin-card bg-white">
+    <div class="table-responsive">
+        <table class="table admin-table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>注文番号</th>
+                    <th>注文日時</th>
+                    <th>購入者</th>
+                    <th>送付先（受取人）</th>
+                    <th class="text-end">合計</th>
+                    <th>ステータス</th>
+                    <th>詳細</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($result['items'] as $o): ?>
+                    <tr>
+                        <td>#<?= (int) $o['order_id'] ?></td>
+                        <td><?= h((string) $o['ordered_at']) ?></td>
+                        <td><?= h((string) $o['buyer_name']) ?><br><small class="text-muted"><?= h((string) $o['buyer_email']) ?></small></td>
+                        <td><?= h((string) $o['shipping_recipient_name']) ?> 様<br><small class="text-muted"><?= h((string) $o['shipping_prefecture'] . $o['shipping_city']) ?></small></td>
+                        <td class="text-end"><?= number_format((float) $o['total_price']) ?>円<br><small class="text-muted"><?= (int) $o['item_count'] ?>点</small></td>
+                        <td><?= h((string) $o['status']) ?></td>
+                        <td><a class="btn btn-sm btn-outline-primary" href="order-detail.php?id=<?= (int) $o['order_id'] ?>">詳細</a></td>
+                        <td>
+                            <?php if ($o['status'] === Order::STATUS_ORDERED): ?>
+                                <div class="d-flex flex-column flex-sm-row gap-1">
+                                    <form method="post" class="m-0">
+                                        <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
+                                        <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
+                                        <input type="hidden" name="target_status" value="<?= h(Order::STATUS_SHIPPED) ?>">
+                                        <input type="hidden" name="return_status" value="<?= h($status) ?>">
+                                        <input type="hidden" name="return_keyword" value="<?= h($keyword) ?>">
+                                        <input type="hidden" name="return_page" value="<?= (int) $result['page'] ?>">
+
+                                        /*
+                                        * TODO: 発送管理機能の実装
+                                        *
+                                        * 1. 「発送する」ボタンから配送情報入力画面へ遷移
+                                        * 2. 配送会社・追跡番号を入力
+                                        * 3. 発送内容を確認して確定
+                                        * 4. 注文ステータスを「発送済み」に変更
+                                        * 5. 購入者へ発送通知メールを自動送信
+                                        * 6. メールに配送追跡URLと受取確認リンクを記載
+                                        * 7. 購入者が受取確認すると「受取完了」に変更
+                                        *
+                                        * セキュリティ:
+                                        * - 管理者認証・CSRF対策
+                                        * - 注文ステータスの二重更新防止
+                                        * - メール送信失敗時の記録と再送
+                                        * - 受取確認は注文者本人のみ実行可能
+                                        *
+                                        * 関連:
+                                        * - src/Order.php
+                                        * - src/OrderMailService.php
+                                        * - admin/order/ship.php（新規作成予定）
+                                        * - pages/order-detail.php
+                                        */
+
+
+                                        <button class="btn btn-sm btn-success text-nowrap w-100" type="submit">発送済みにする</button>
+                                    </form>
+                                    <form method="post" class="m-0" onsubmit="return confirm('注文 #<?= (int) $o['order_id'] ?> をキャンセルします。在庫を復元します。よろしいですか？');">
+                                        <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
+                                        <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
+                                        <input type="hidden" name="target_status" value="<?= h(Order::STATUS_CANCELED) ?>">
+                                        <input type="hidden" name="return_status" value="<?= h($status) ?>">
+                                        <input type="hidden" name="return_keyword" value="<?= h($keyword) ?>">
+                                        <input type="hidden" name="return_page" value="<?= (int) $result['page'] ?>">
+                                        <button class="btn btn-sm btn-outline-danger text-nowrap w-100" type="submit">キャンセルする</button>
+                                    </form>
+                                </div>
+                            <?php elseif ($o['status'] === Order::STATUS_SHIPPED): ?>
+                                <span class="badge text-bg-success">発送済み</span>
+                            <?php elseif ($o['status'] === Order::STATUS_CANCELED): ?>
+                                <span class="badge text-bg-secondary">キャンセル済み</span>
+                            <?php else: ?>
+                                <span class="text-muted">操作できません</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (!$result['items']): ?><tr>
+                        <td colspan="8" class="text-center text-muted py-4">該当する注文はありません。</td>
+                    </tr><?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <div class="d-flex justify-content-between align-items-center mt-3">
     <span class="text-muted small">該当 <?= (int) $result['total'] ?> 件</span>
     <?php if ($result['total_pages'] > 1): ?>
-    <nav aria-label="ページ送り"><ul class="pagination pagination-sm mb-0">
-        <?php for ($p = 1; $p <= $result['total_pages']; $p++): ?>
-            <li class="page-item <?= $p === $result['page'] ? 'active' : '' ?>"><a class="page-link" href="<?= h($url(['status' => $status, 'keyword' => $keyword, 'page' => $p > 1 ? (string) $p : ''])) ?>"><?= $p ?></a></li>
-        <?php endfor; ?>
-    </ul></nav>
+        <nav aria-label="ページ送り">
+            <ul class="pagination pagination-sm mb-0">
+                <?php for ($p = 1; $p <= $result['total_pages']; $p++): ?>
+                    <li class="page-item <?= $p === $result['page'] ? 'active' : '' ?>"><a class="page-link" href="<?= h($url(['status' => $status, 'keyword' => $keyword, 'page' => $p > 1 ? (string) $p : ''])) ?>"><?= $p ?></a></li>
+                <?php endfor; ?>
+            </ul>
+        </nav>
     <?php endif; ?>
 </div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

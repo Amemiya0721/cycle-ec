@@ -1,4 +1,4 @@
-```mermaid
+
 erDiagram
 
     USERS ||--o| USER_ADDRESSES : has
@@ -12,9 +12,11 @@ erDiagram
     PRODUCTS ||--o{ PRODUCT_SPECS : has
     PRODUCTS ||--o{ PRODUCT_ACCESSORIES : has
     PRODUCTS ||--o{ ORDER_ITEMS : contains
+    PRODUCTS ||--o{ CART_ITEMS : added_to
 
     ORDERS ||--|{ ORDER_ITEMS : contains
 
+    CARTS ||--o{ CART_ITEMS : contains
 
     USERS {
         int user_id PK
@@ -132,5 +134,19 @@ erDiagram
         int order_id FK
         int product_id FK
         decimal price
+        datetime created_at
+    }
+
+    CARTS {
+        bigint cart_id PK "UNSIGNED AUTO_INCREMENT"
+        char token_hash UK "CHAR(64)"
+        datetime expires_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    CART_ITEMS {
+        bigint cart_id PK,FK "UNSIGNED"
+        int product_id PK,FK
         datetime created_at
     }

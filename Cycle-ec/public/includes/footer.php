@@ -54,14 +54,50 @@
             </div>
             <div class="footer-bottom">© OVERHAUL All Rights Reserved.</div>
         </div>
-    </footer>
+       </footer>
+
+    <!-- Cookie使用案内 -->
+    <div
+        id="cookie-banner"
+        class="cookie-banner"
+        role="region"
+        aria-label="Cookieの使用案内"
+        hidden>
+
+        <div class="cookie-banner-inner">
+
+            <div class="cookie-banner-text">
+                <strong>Cookieの使用について</strong>
+
+                <p>
+                    OVERHAULでは、ログイン状態の維持や
+                    ショッピングカートの保存など、
+                    サイトの正常な動作に必要なCookieを使用しています。
+                </p>
+
+                <a href="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>pages/privacy.php">
+                    プライバシーポリシー
+                </a>
+            </div>
+
+            <button
+                type="button"
+                id="cookie-acknowledge"
+                class="cookie-banner-button">
+                確認しました
+            </button>
+
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
-    <script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- 共通JS -->
-    <script src="/assets/js/main.js"></script>
-    </body>
+    <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>assets/js/main.js"></script>
 
+    <!-- Cookie案内JS -->
+    <script src="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>assets/js/cookie-banner.js"></script>
+
+    </body>
     </html>

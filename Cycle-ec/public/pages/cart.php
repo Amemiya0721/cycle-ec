@@ -1,45 +1,72 @@
 <?php
 
 declare(strict_types=1);
-session_start();
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../../src/Database.php';
 require_once __DIR__ . '/../../src/Product.php';
 require_once __DIR__ . '/../../src/Auth.php';
+require_once __DIR__ . '/../../src/Cart.php';
+
+// カートを初期化
+$cartService = new Cart(Database::getConnection());
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrfToken = $_POST['csrf_token'] ?? null;
+
     if (!is_string($csrfToken) || !Auth::verifyCsrf($csrfToken)) {
         http_response_code(403);
         exit('不正なリクエストです。');
     }
 
-    $productId = filter_input(INPUT_POST, 'product_id', FILTER_VALIDATE_INT);
+    // 商品IDと操作内容を取得
+    $productId = filter_input(
+        INPUT_POST,
+        'product_id',
+        FILTER_VALIDATE_INT
+    );
+
     $action = $_POST['action'] ?? 'add';
 
     if ($productId !== false && $productId !== null && $productId > 0) {
+
         if ($action === 'remove') {
-            $cart = $_SESSION['cart'] ?? [];
-            $_SESSION['cart'] = array_values(array_filter(
-                $cart,
-                static fn($id): bool => !is_numeric($id) || (int) $id !== $productId
-            ));
+
+            $cartService->remove($productId);
         } elseif ($action === 'add') {
-            $_SESSION['cart'] = array_values(array_unique(array_merge(
-                $_SESSION['cart'] ?? [],
-                [$productId]
-            )));
+
+            if (!$cartService->add($productId)) {
+                $_SESSION['cart_error'] =
+                    $cartService->getLastError()
+                    ?? '商品をカートに追加できませんでした。';
+            }
         }
     }
     header('Location: cart.php');
     exit;
 }
 
-$cartIds = array_values(array_filter($_SESSION['cart'] ?? [], 'is_numeric'));
+$cartIds = $cartService->ids();
 $items = [];
+
 foreach ($cartIds as $productId) {
-    $item = Product::findById((int) $productId);
-    if ($item !== null) {
-        $items[] = $item;
+
+    $item = Product::findById($productId);
+
+    if (
+        $item === null ||
+        ($item['status'] ?? '') !== '販売中' ||
+        (int) ($item['stock_quantity'] ?? 0) <= 0 ||
+        (int) ($item['is_deleted'] ?? 0) === 1
+    ) {
+        $cartService->remove($productId);
+        continue;
     }
+
+    $items[] = $item;
 }
 
 function h(?string $value): string
@@ -51,6 +78,13 @@ require_once __DIR__ . '/../includes/nav.php';
 ?>
 <main class="container py-5">
     <h1 class="h3 mb-4">カート</h1>
+
+    <?php if (!empty($_SESSION['cart_error'])): ?>
+        <div class="alert alert-warning" role="alert">
+            <?= h($_SESSION['cart_error']) ?>
+        </div>
+        <?php unset($_SESSION['cart_error']); ?>
+    <?php endif; ?>
     <?php if (!$items): ?>
         <p>カートに商品がありません。</p>
     <?php else: ?>

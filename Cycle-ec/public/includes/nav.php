@@ -1,19 +1,27 @@
 <?php
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
-  session_start();
+    session_start();
 }
 
 $config = require __DIR__ . '/../../config/config.php';
+
 require_once __DIR__ . '/../../src/Category.php';
+require_once __DIR__ . '/../../src/Database.php';
+require_once __DIR__ . '/../../src/Cart.php';
 
 $baseUrl = $config['app']['base_url'];
+
 $isLoggedIn = !empty($_SESSION['user_id']);
 $loggedInName = (string) ($_SESSION['user_name'] ?? '');
 
 // カートの商品数を取得
-$cart = $_SESSION['cart'] ?? [];
-$cartCount = is_array($cart) ? count($cart) : 0;
+// 既に初期化されていれば再利用する
+if (!isset($cartService)) {
+    $cartService = new Cart(Database::getConnection());
+}
+
+$cartCount = $cartService->count();
 
 $categories = [];
 
@@ -199,7 +207,7 @@ try {
           <span
             class="cart-badge"
             id="cart-count-mobile">
-            0
+             <?= $cartCount ?>
           </span>
         </a>
       </li>
