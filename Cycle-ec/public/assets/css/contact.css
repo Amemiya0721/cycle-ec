@@ -1,0 +1,376 @@
+
+/* =========================================
+   OVERHAUL - CONTACT PAGE
+========================================= */
+
+.contact-container {
+    width: min(100% - 32px, 720px);
+    margin: 60px auto 100px;
+    padding: 40px;
+    box-sizing: border-box;
+
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.035);
+
+    color: #222;
+}
+
+/* =========================================
+   見出し
+========================================= */
+
+.contact-container h1 {
+    margin: 0 0 14px;
+
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.contact-container .description {
+    margin: 0 0 32px;
+    padding-bottom: 24px;
+
+    font-size: 14px;
+    line-height: 1.8;
+    color: #666;
+
+    border-bottom: 1px solid #eee;
+}
+
+/* =========================================
+   フォーム
+========================================= */
+
+.contact-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+.contact-container .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.contact-container label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* 必須ラベル */
+
+.contact-container .required {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 7px;
+
+    background: #fff0f0;
+    color: #c0392b;
+
+    border-radius: 4px;
+
+    font-size: 11px;
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+/* =========================================
+   入力欄
+========================================= */
+
+.contact-container input:not([type="hidden"]),
+.contact-container select,
+.contact-container textarea {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 13px 14px;
+
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+
+    color: #222;
+    background: #fff;
+
+    border: 1px solid #d8dce0;
+    border-radius: 6px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.contact-container input:hover,
+.contact-container select:hover,
+.contact-container textarea:hover {
+    border-color: #999;
+}
+
+.contact-container input:focus,
+.contact-container select:focus,
+.contact-container textarea:focus {
+    border-color: #333;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.07);
+}
+
+.contact-container input::placeholder,
+.contact-container textarea::placeholder {
+    color: #aaa;
+}
+
+.contact-container select {
+    cursor: pointer;
+}
+
+.contact-container textarea {
+    min-height: 180px;
+    resize: vertical;
+}
+
+.contact-container .form-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #888;
+}
+
+/* =========================================
+   ボタン
+========================================= */
+
+.contact-container .submit-button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 16px 20px;
+
+    background: #191919;
+    color: #fff;
+
+    border: none;
+    border-radius: 6px;
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.contact-container .submit-button:hover {
+    background: #404040;
+    transform: translateY(-1px);
+}
+
+.contact-container .submit-button:active {
+    transform: translateY(0);
+}
+
+/* =========================================
+   エラー表示
+========================================= */
+
+.contact-container .error-box {
+    padding: 18px 20px;
+    margin-bottom: 28px;
+
+    background: #fff5f5;
+    border: 1px solid #f3c7c7;
+    border-radius: 6px;
+
+    color: #a52a2a;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.contact-container .error-box ul {
+    padding-left: 20px;
+    margin: 10px 0 0;
+}
+
+/* =========================================
+   確認画面
+========================================= */
+
+.contact-container .contact-confirm h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.contact-container .confirm-description {
+    margin-bottom: 28px;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.contact-container .confirm-list {
+    margin: 0 0 30px;
+    padding: 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.contact-container .confirm-item {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.contact-container .confirm-item dt {
+    padding: 18px;
+    margin: 0;
+
+    background: #f8f9fa;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.contact-container .confirm-item dd {
+    padding: 18px;
+    margin: 0;
+
+    font-size: 14px;
+    line-height: 1.8;
+
+    overflow-wrap: anywhere;
+}
+
+.contact-container .confirm-message {
+    white-space: pre-wrap;
+}
+
+.contact-container .confirm-notice {
+    margin: 0 0 24px;
+    padding: 14px 16px;
+
+    background: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+
+    color: #666;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+/* 修正ボタン */
+
+.contact-container .back-button {
+    width: 100%;
+    padding: 15px;
+
+    background: #fff;
+    color: #333;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.contact-container .back-button:hover {
+    background: #f5f5f5;
+}
+
+/* =========================================
+   戻るリンク
+========================================= */
+
+.contact-container .back-link {
+    display: table;
+    margin: 32px auto 0;
+
+    color: #666;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.contact-container .back-link::before {
+    content: "←";
+    margin-right: 8px;
+}
+
+.contact-container .back-link:hover {
+    color: #111;
+    text-decoration: underline;
+}
+
+/* キーボード操作 */
+
+.contact-container button:focus-visible,
+.contact-container .back-link:focus-visible {
+    outline: 3px solid #888;
+    outline-offset: 3px;
+}
+
+/* =========================================
+   レスポンシブ
+========================================= */
+
+@media (max-width: 768px) {
+
+    .contact-container {
+        width: calc(100% - 24px);
+        margin: 24px auto 60px;
+        padding: 24px 18px;
+        border-radius: 8px;
+    }
+
+    .contact-container h1 {
+        font-size: 24px;
+    }
+
+    .contact-container .description {
+        font-size: 13px;
+        margin-bottom: 26px;
+    }
+
+    .contact-container form {
+        gap: 22px;
+    }
+
+    .contact-container input:not([type="hidden"]),
+    .contact-container select,
+    .contact-container textarea {
+        font-size: 16px;
+    }
+
+    .contact-container textarea {
+        min-height: 160px;
+    }
+
+    .contact-container .confirm-item {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-container .confirm-item dt {
+        padding: 12px 14px;
+    }
+
+    .contact-container .confirm-item dd {
+        padding: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .contact-container * {
+        transition: none !important;
+    }
+}

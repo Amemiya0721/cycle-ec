@@ -13,8 +13,7 @@ $baseUrl = $config['app']['base_url'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>OVERHAUL</title>
-
+<title><?= htmlspecialchars($pageTitle ?? 'OVERHAUL', ENT_QUOTES, 'UTF-8') ?></title>
     <!-- Bootstrap CSS -->
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -51,3 +50,5 @@ $baseUrl = $config['app']['base_url'];
     <link
         rel="stylesheet"
         href="<?= $baseUrl ?>assets/css/cookie-banner.css">
+    </head>
+    <body>
