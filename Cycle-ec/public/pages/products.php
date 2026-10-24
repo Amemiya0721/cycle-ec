@@ -156,8 +156,8 @@ function buildQuery(array $overrides = []): string
 
     $query = array_filter(
         $query,
-        static fn ($value): bool =>
-            $value !== null && $value !== ''
+        static fn($value): bool =>
+        $value !== null && $value !== ''
     );
 
     if (
@@ -170,8 +170,8 @@ function buildQuery(array $overrides = []): string
     return 'products.php'
         . (
             $query
-                ? '?' . http_build_query($query)
-                : ''
+            ? '?' . http_build_query($query)
+            : ''
         );
 }
 
@@ -189,10 +189,10 @@ function isSelectedCategory(
         $currentCategory
         === scalarValue($category['category_id'] ?? null)
     )
-    || (
-        $currentCategory
-        === scalarValue($category['name'] ?? null)
-    );
+        || (
+            $currentCategory
+            === scalarValue($category['name'] ?? null)
+        );
 }
 
 
@@ -257,175 +257,174 @@ require_once __DIR__ . '/../includes/nav.php';
                 class="search-form-panel"
                 method="get"
                 action="products.php"
-                id="productSearchForm"
-            >
+                id="productSearchForm">
 
-                <!-- カテゴリ -->
+                <!-- ========================================
+         常時表示する検索バー
+    ========================================= -->
+                <div class="search-toolbar">
 
-                <div class="search-field">
+                    <div class="search-field search-field--keyword">
+                        <label for="keyword" class="visually-hidden">
+                            キーワード
+                        </label>
 
-                    <label for="category">
-                        カテゴリ
-                    </label>
+                        <input
+                            type="search"
+                            name="keyword"
+                            id="keyword"
+                            placeholder="商品名・メーカーで検索"
+                            value="<?= h($keyword) ?>">
+                    </div>
 
-                    <select
-                        name="category"
-                        id="category"
-                    >
+                    <button
+                        type="submit"
+                        class="btn-hero search-submit">
+                        検索
+                    </button>
 
-                        <option value="">
-                            すべてのカテゴリ
-                        </option>
-
-                        <?php foreach ($categories as $cat): ?>
-
-                            <option
-                                value="<?= (int) ($cat['category_id'] ?? 0) ?>"
-                                <?= isSelectedCategory(scalarValue($category), $cat)
-                                    ? 'selected'
-                                    : '' ?>
-                            >
-                                <?= h($cat['name'] ?? null) ?>
-                            </option>
-
-                        <?php endforeach; ?>
-
-                    </select>
+                    <button
+                        type="button"
+                        class="search-filter-toggle"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#searchFilters"
+                        aria-expanded="false"
+                        aria-controls="searchFilters">
+                        絞り込み
+                        <span class="search-toggle-arrow">⌄</span>
+                    </button>
 
                 </div>
 
+                <!-- ========================================
+         折りたたみ検索条件
+    ========================================= -->
+                <div class="collapse" id="searchFilters">
+                    <div class="search-filter-content">
 
-                <!-- コンディション -->
+                        <!-- カテゴリ -->
+                        <div class="search-field">
+                            <label for="category">カテゴリ</label>
 
-                <fieldset class="search-field search-field--condition">
-                    <legend>コンディション</legend>
-                    <div class="condition-options">
-                        <?php foreach ($productConditions as $conditionValue => $condition): ?>
+                            <select name="category" id="category">
+                                <option value="">すべてのカテゴリ</option>
+
+                                <?php foreach ($categories as $cat): ?>
+                                    <option
+                                        value="<?= (int) ($cat['category_id'] ?? 0) ?>"
+                                        <?= isSelectedCategory(scalarValue($category), $cat)
+                                            ? 'selected'
+                                            : '' ?>>
+                                        <?= h($cat['name'] ?? null) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- コンディション -->
+                        <fieldset class="search-field search-field--condition">
+                            <legend>コンディション</legend>
+
+                            <div class="condition-options">
+                                <?php foreach ($productConditions as $conditionValue => $condition): ?>
+                                    <label class="condition-option">
+                                        <input
+                                            type="checkbox"
+                                            name="condition[]"
+                                            value="<?= h($conditionValue) ?>"
+                                            <?= in_array($conditionValue, $selectedConditions, true)
+                                                ? 'checked'
+                                                : '' ?>>
+
+                                        <span>
+                                            <?= h($condition['label'] ?? $conditionValue) ?>
+                                        </span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </fieldset>
+
+                        <!-- SOLD表示切替 -->
+                        <div class="search-field search-field--sold">
                             <label class="condition-option">
                                 <input
                                     type="checkbox"
-                                    name="condition[]"
-                                    value="<?= h($conditionValue) ?>"
-                                    <?= in_array($conditionValue, $selectedConditions, true) ? 'checked' : '' ?>
-                                >
-                                <span><?= h($condition['label'] ?? $conditionValue) ?></span>
+                                    name="sold"
+                                    value="hide"
+                                    <?= $hideSold ? 'checked' : '' ?>>
+
+                                <span>SOLD商品を非表示にする</span>
                             </label>
-                        <?php endforeach; ?>
+                        </div>
+
+                        <!-- 並び替え -->
+                        <div class="search-field search-field--sort">
+                            <label for="sort">並び替え</label>
+
+                            <select name="sort" id="sort">
+
+                                <option
+                                    value="condition"
+                                    <?= $currentSort === 'condition'
+                                        ? 'selected'
+                                        : '' ?>>
+                                    コンディション順
+                                </option>
+
+                                <option
+                                    value="newest"
+                                    <?= $currentSort === 'newest'
+                                        ? 'selected'
+                                        : '' ?>>
+                                    新着順
+                                </option>
+
+                                <option
+                                    value="oldest"
+                                    <?= $currentSort === 'oldest'
+                                        ? 'selected'
+                                        : '' ?>>
+                                    古い順
+                                </option>
+
+                                <option
+                                    value="price_asc"
+                                    <?= $currentSort === 'price_asc'
+                                        ? 'selected'
+                                        : '' ?>>
+                                    価格が安い順
+                                </option>
+
+                                <option
+                                    value="price_desc"
+                                    <?= $currentSort === 'price_desc'
+                                        ? 'selected'
+                                        : '' ?>>
+                                    価格が高い順
+                                </option>
+
+                            </select>
+                        </div>
+
+                        <!-- 検索ボタン -->
+                        <div class="search-actions">
+
+                            <a
+                                href="products.php"
+                                class="btn-search-reset">
+                                条件をクリア
+                            </a>
+
+                            <button
+                                type="submit"
+                                class="btn-hero search-submit">
+                                この条件で検索
+                            </button>
+
+                        </div>
+
                     </div>
-                </fieldset>
-
-
-                <!-- SOLD表示切替 -->
-
-                <div class="search-field search-field--sold">
-
-                    <label class="condition-option">
-                        <input
-                            type="checkbox"
-                            name="sold"
-                            value="hide"
-                            <?= $hideSold ? 'checked' : '' ?>
-                        >
-                        <span>SOLD商品を非表示にする</span>
-                    </label>
-
                 </div>
-
-
-                <!-- キーワード -->
-
-                <div class="
-                    search-field
-                    search-field--keyword
-                ">
-
-                    <label for="keyword">
-                        キーワード
-                    </label>
-
-                    <input
-                        type="text"
-                        name="keyword"
-                        id="keyword"
-                        placeholder="例：shimano, 105, カーボンフレーム"
-                        value="<?= h($keyword) ?>"
-                    >
-
-                </div>
-
-
-                <!-- ソート -->
-
-                <div class="
-                    search-field
-                    search-field--sort
-                ">
-
-                    <label for="sort">
-                        並び替え
-                    </label>
-
-                    <select
-                        name="sort"
-                        id="sort"
-                    >
-
-                        <option
-                            value="condition"
-                            <?= $currentSort === 'condition'
-                                ? 'selected'
-                                : '' ?>
-                        >
-                            コンディション順
-                        </option>
-
-                        <option
-                            value="newest"
-                            <?= $currentSort === 'newest'
-                                ? 'selected'
-                                : '' ?>
-                        >
-                            新着順
-                        </option>
-
-                        <option
-                            value="oldest"
-                            <?= $currentSort === 'oldest'
-                                ? 'selected'
-                                : '' ?>
-                        >
-                            古い順
-                        </option>
-
-                        <option
-                            value="price_asc"
-                            <?= $currentSort === 'price_asc'
-                                ? 'selected'
-                                : '' ?>
-                        >
-                            価格が安い順
-                        </option>
-
-                        <option
-                            value="price_desc"
-                            <?= $currentSort === 'price_desc'
-                                ? 'selected'
-                                : '' ?>
-                        >
-                            価格が高い順
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <button
-                    type="submit"
-                    class="btn-hero search-submit"
-                >
-                    検索する
-                </button>
 
             </form>
 
@@ -487,8 +486,7 @@ require_once __DIR__ . '/../includes/nav.php';
 
                             <a
                                 href="product-detail.php?id=<?= (int) $item['product_id'] ?>"
-                                class="prod-card<?= $sold ? ' is-sold' : '' ?>"
-                            >
+                                class="prod-card<?= $sold ? ' is-sold' : '' ?>">
 
                                 <!-- 商品画像 -->
 
@@ -501,15 +499,13 @@ require_once __DIR__ . '/../includes/nav.php';
                                         <img
                                             src="<?= h($imageUrl) ?>"
                                             alt="<?= h((string) $item['name']) ?>"
-                                            class="prod-image"
-                                        >
+                                            class="prod-image">
 
                                     <?php else: ?>
 
                                         <span
                                             class="thumb-icon"
-                                            aria-hidden="true"
-                                        >
+                                            aria-hidden="true">
                                             &#128690;
                                         </span>
 
@@ -582,8 +578,7 @@ require_once __DIR__ . '/../includes/nav.php';
 
                     <nav
                         class="pagination"
-                        aria-label="ページネーション"
-                    >
+                        aria-label="ページネーション">
 
                         <?php for ($p = 1; $p <= $result['total_pages']; $p++): ?>
 
@@ -594,8 +589,7 @@ require_once __DIR__ . '/../includes/nav.php';
                                     <?= $p === $result['page']
                                         ? 'is-current'
                                         : '' ?>
-                                "
-                            >
+                                ">
                                 <?= $p ?>
                             </a>
 

@@ -290,40 +290,51 @@ class Product
     }
 
     /**
-     * 関連商品を取得する（同カテゴリの他商品。新しい順）。
-     *
-     * 一覧検索用の search() は条件構築が複雑なため、
-     * 関連商品専用のシンプルなクエリとして分離する
-     * （search() を流用すると余計な検索条件・ページングを
-     *   持ち込むことになり、かえって複雑になるため）。
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public static function relatedByCategory(int $productId, int $categoryId, int $limit = 8): array
-    {
-        $limit = max(1, min($limit, 20));
-        $pdo = Database::getConnection();
-        $stmt = $pdo->prepare(
-            'SELECT p.product_id, p.name, p.price, c.name AS category_name,
-                    pi.image_url
-             FROM products p
-             INNER JOIN categories c ON c.category_id = p.category_id
-             LEFT JOIN product_images pi
-                 ON pi.product_id = p.product_id
-                AND pi.image_type = "main"
-                AND pi.sort_order = 1
-             WHERE p.is_deleted = 0
-               AND p.category_id = :category_id
-               AND p.product_id != :product_id
-             ORDER BY p.created_at DESC, p.product_id DESC
-             LIMIT :limit'
-        );
-        $stmt->bindValue(':category_id', $categoryId, PDO::PARAM_INT);
-        $stmt->bindValue(':product_id', $productId, PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    }
+ * 関連商品を取得する。
+ * 閲覧中の商品がSOLDでも、同カテゴリの販売中商品を表示する。
+ *
+ * @return array<int, array<string, mixed>>
+ */
+public static function relatedByCategory(
+    int $productId,
+    int $categoryId,
+    int $limit = 8
+): array {
+    $limit = max(1, min($limit, 20));
+
+    $pdo = Database::getConnection();
+
+    $stmt = $pdo->prepare(
+        'SELECT
+            p.product_id,
+            p.name,
+            p.price,
+            c.name AS category_name,
+            pi.image_url
+         FROM products p
+         INNER JOIN categories c
+             ON c.category_id = p.category_id
+         LEFT JOIN product_images pi
+             ON pi.product_id = p.product_id
+             AND pi.image_type = "main"
+             AND pi.sort_order = 1
+         WHERE p.is_deleted = 0
+             AND p.category_id = :category_id
+             AND p.product_id != :product_id
+             AND p.status IN ("販売中", "on_sale")
+             AND p.stock_quantity > 0
+         ORDER BY p.created_at DESC, p.product_id DESC
+         LIMIT :limit'
+    );
+
+    $stmt->bindValue(':category_id', $categoryId, PDO::PARAM_INT);
+    $stmt->bindValue(':product_id', $productId, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
     public static function create(array $data): int
     {

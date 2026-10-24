@@ -11,84 +11,76 @@
 }
 
 
-/* ---------- 検索フォーム ---------- */
+/* ---------- 固定・折りたたみ検索フォーム ---------- */
+/* style.css: PC header 82px / mobile header 60px */
+:root { --products-header-height: 82px; }
+
 .search-form-panel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 16px;
-  background: var(--off);
-  border: 1px solid var(--line);
-  padding: 20px;
+  position: sticky;
+  top: var(--products-header-height);
+  z-index: 1020; /* main-header (1030) より下 */
+  display: block;
+  padding: 12px;
   margin-bottom: 32px;
-}
-
-.search-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.5px;
-}
-.search-field label {
-  color: var(--sub);
-  letter-spacing: 0.03em;
-}
-.search-field select,
-.search-field input {
-  border: 1px solid var(--line);
-  border-radius: 0;
-  padding: 9px 10px;
-  font-size: 13.5px;
   background: #fff;
-  color: var(--ink);
-  min-width: 160px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .06);
 }
-
-/* チェックボックスはテキスト入力用のスタイルを打ち消す
-   （.search-field input より後に置くこと） */
-.search-field input[type="checkbox"] {
-  min-width: 0;
-  width: auto;
-  padding: 0;
-  border: 0;
+.search-toolbar { display: flex; align-items: center; gap: 10px; }
+.search-toolbar .search-field--keyword { flex: 1 1 auto; min-width: 0; margin: 0; }
+.search-field { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; font-size: 13px; }
+.search-field label, .search-field--condition legend { color: var(--sub); font-size: 12px; font-weight: 600; }
+.search-field select, .search-field input:not([type="checkbox"]) {
+  width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--line); border-radius: 0;
+  background: #fff; color: var(--ink); font-size: 14px;
 }
-
-.search-field--keyword { flex: 1 1 240px; }
-.search-field--keyword input { width: 100%; }
-
-.search-field--condition { min-width: 100%; }
-.search-field--condition legend {
-  float: none;
-  width: auto;
-  margin: 0;
-  color: var(--sub);
-  font-size: 12.5px;
+.search-toolbar .search-field input[type="search"] { height: 44px; border-radius: 5px; }
+.search-toolbar .search-submit, .search-filter-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 16px; white-space: nowrap;
+  border: 1px solid var(--line); border-radius: 5px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
 }
-
-.search-field--sold {
-  justify-content: flex-end;
+.search-toolbar .search-submit { background: var(--ink); color: #fff; border-color: var(--ink); }
+.search-filter-toggle { gap: 8px; background: #fff; color: var(--ink); }
+.search-filter-toggle:hover { background: var(--off); }
+.search-toggle-arrow { display: inline-block; transition: transform .2s ease; }
+.search-filter-toggle[aria-expanded="true"] .search-toggle-arrow { transform: rotate(180deg); }
+.search-filter-content {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;
+  padding-top: 20px; margin-top: 12px; border-top: 1px solid var(--line);
+  max-height: min(60vh, 560px); overflow-y: auto; overscroll-behavior: contain;
 }
-
-.condition-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
+.search-field--condition { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 0; border: 0; }
+.search-field--condition legend { float: none; width: auto; margin-bottom: 10px; }
+.condition-options { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.condition-option { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; color: var(--ink); font-size: 13px; cursor: pointer; }
+.search-field input[type="checkbox"] { width: 17px; height: 17px; min-width: 17px; margin: 0; padding: 0; accent-color: var(--ink); flex-shrink: 0; }
+.search-field--sold { grid-column: 1 / -1; justify-content: flex-start; }
+.search-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+.search-actions .search-submit, .search-actions .btn-search-reset {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 150px; min-height: 46px; padding: 12px 20px;
+  border-radius: 0; font-size: 14px; font-weight: 600; text-decoration: none;
 }
-.condition-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--ink);
-  cursor: pointer;
+.search-actions .search-submit { background: var(--ink); color: #fff; border: 1px solid var(--ink); cursor: pointer; }
+.search-actions .btn-search-reset { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.search-actions .search-submit:hover { opacity: .85; }
+.search-actions .btn-search-reset:hover { background: #fff; border-color: var(--ink); }
+@media (max-width: 991px) { :root { --products-header-height: 60px; } }
+@media (max-width: 576px) {
+  .search-form-panel { padding: 8px; margin-bottom: 28px; }
+  .search-toolbar { gap: 6px; }
+  .search-toolbar .search-field input[type="search"] { min-height: 40px; height: 40px; font-size: 16px; }
+  .search-toolbar .search-submit, .search-filter-toggle { min-height: 40px; padding: 0 10px; font-size: 12px; }
+  .search-filter-content { grid-template-columns: minmax(0, 1fr); gap: 18px; max-height: 55vh; }
+  .search-field select, .search-field input:not([type="checkbox"]) { font-size: 16px; }
+  .condition-options { gap: 10px 16px; }
+  .search-actions { flex-direction: column; gap: 10px; }
+  .search-actions .search-submit, .search-actions .btn-search-reset { width: 100%; min-width: 0; }
 }
-
-.search-submit {
-  background: var(--ink);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-}
-
 
 /* ---------- 検索結果件数 ---------- */
 .result-count {
@@ -205,28 +197,132 @@
 
 
 /* ---------- スマホ ---------- */
-@media (max-width: 576px) {
-  .search-form-panel {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .search-field select,
-  .search-field input {
-    min-width: 0;
-    width: 100%;
-  }
-  .search-field input[type="checkbox"] {
-    width: auto;
-  }
-  .search-submit {
-    width: 100%;
-    text-align: center;
-  }
 
-  .badge-sold {
-    top: 6px;
-    left: 6px;
-    padding: 2px 8px;
-    font-size: 11px;
-  }
+/* ==========================================================
+   MOBILE / 商品一覧ページ
+   576px以下
+   ========================================================== */
+
+@media (max-width: 576px) {
+
+    /* --------------------------------
+       ページ全体
+       -------------------------------- */
+
+    .products-section {
+        padding: 20px 0 56px;
+    }
+
+    /* --------------------------------
+       検索結果ヘッダー
+       -------------------------------- */
+
+    .products-section .section-head {
+        margin-bottom: 14px;
+    }
+
+    .products-section .section-head h2 {
+        font-size: 19px;
+        line-height: 1.5;
+    }
+
+    .result-count {
+        font-size: 12px;
+    }
+
+    /* --------------------------------
+       商品一覧 2列
+       -------------------------------- */
+
+    .prod-grid {
+        --bs-gutter-x: 12px;
+        --bs-gutter-y: 22px;
+        margin-top: 0;
+    }
+
+    .prod-grid > [class^="col-"] {
+        margin-bottom: 0;
+    }
+
+    .prod-thumb {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+    }
+
+    .prod-image {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .prod-info {
+        padding-top: 9px;
+    }
+
+    .prod-name {
+        font-size: 12px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    .prod-price {
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
+    .prod-price .tax {
+        font-size: 10px;
+        font-weight: 400;
+    }
+
+    /* --------------------------------
+       SOLDバッジ
+       -------------------------------- */
+
+    .badge-sold {
+        top: 6px;
+        left: 6px;
+
+        padding: 3px 8px;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+    }
+
+    /* --------------------------------
+       検索結果なし
+       -------------------------------- */
+
+    .no-result {
+        padding: 44px 16px;
+        font-size: 13px;
+        line-height: 1.8;
+    }
+
+    /* --------------------------------
+       ページネーション
+       -------------------------------- */
+
+    .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+
+        gap: 7px;
+        margin-top: 32px;
+    }
+
+    .page-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 38px;
+        height: 38px;
+
+        font-size: 13px;
+        text-decoration: none;
+    }
 }

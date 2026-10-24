@@ -1,60 +1,42 @@
-/* ==========================================================
-   products.js
-   -----------------------------------------------------------
-   検索状態はあくまでURL（＝サーバー側で$_GETから復元されるもの）が正。
-   このJSはURLの組み立てを補助するだけで、検索条件をJS変数として
-   保持・管理することはしない（ページを直接開いた場合と挙動が
-   ズレることを防ぐため）。
 
-   やること：
-     ・カテゴリ / 並び替えのプルダウンを変更した瞬間に、
-       URLSearchParamsで安全にURLを組み立てて即座に遷移する
-     ・キーワード欄はEnter/送信ボタンで通常のGET送信に任せる
-       （入力の都度遷移すると邪魔なため）
-     ・ページ送り等の<a>リンクはサーバー側で生成済みのURLを
-       そのまま使うので、ここでは何もしない
+/* ==========================================================
+   OVERHAUL - products.js
+   ----------------------------------------------------------
+   商品検索画面
+
+   検索方式：
+     ・通常のGET送信（同期検索）
+     ・すべての検索条件を検索ボタンで確定
+     ・キーワードはEnterキーでも検索可能
+     ・検索条件はURLパラメータで管理
+     ・ページネーションはPHP側で処理
+
+   JavaScriptによる自動検索は行わない。
    ========================================================== */
 
 (() => {
-  const form = document.getElementById("productSearchForm");
-  if (!form) return;
+    "use strict";
 
-  const categorySelect = document.getElementById("category");
-  const sortSelect = document.getElementById("sort");
+    const form = document.getElementById("productSearchForm");
 
-  /**
-   * 現在のURLをベースに、指定したキーだけを差し替えたURLを返す。
-   * ページ番号は検索条件が変わったら1ページ目に戻すため除去する。
-   */
-  function buildUrl(overrides) {
-    const params = new URLSearchParams(window.location.search);
+    if (!form) return;
 
-    Object.entries(overrides).forEach(([key, value]) => {
-      if (value === null || value === "") {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
+    /*
+    |--------------------------------------------------------------------------
+    | 検索フォーム送信
+    |--------------------------------------------------------------------------
+    */
+
+    form.addEventListener("submit", () => {
+
+        // 検索条件を変更した場合は1ページ目から表示する
+        const pageInput = form.querySelector('[name="page"]');
+
+        if (pageInput) {
+            pageInput.remove();
+        }
+
+        // 通常のGET送信はブラウザに任せる
     });
 
-    params.delete("page"); // 条件変更時はページングをリセット
-
-    const query = params.toString();
-    return `products.php${query ? `?${query}` : ""}`;
-  }
-
-  function navigateWith(overrides) {
-    window.location.href = buildUrl(overrides);
-  }
-
-  categorySelect?.addEventListener("change", () => {
-    navigateWith({ category: categorySelect.value });
-  });
-
-  sortSelect?.addEventListener("change", () => {
-    navigateWith({ sort: sortSelect.value });
-  });
-
-  // キーワードはフォーム送信（Enterキー or 検索ボタン）で通常どおりGET送信
-  // → ブラウザが自動的にURLエンコードしてURLへ反映するため、ここでは何もしない
 })();

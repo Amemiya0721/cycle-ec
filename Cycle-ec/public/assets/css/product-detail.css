@@ -371,3 +371,8 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+@media (max-width: 991.98px) {
+    .pd-wrap {
+        padding: 20px 16px 60px;
+    }
+}
