@@ -8,9 +8,6 @@ require_once __DIR__ . '/Mailer.php';
 
 /**
  * 注文関連メールの送信と、送信結果の記録（order_mail_logs）。
- *
- * 送信は既存の Mailer（PHPMailer / config.php の smtp 設定）を使う。
- * 受取確認リンクのURLは config.php の site.url（.env の SITE_URL）と app.base_url から作る。
  */
 final class OrderMailService
 {
@@ -32,9 +29,68 @@ final class OrderMailService
     }
 
     /**
-     * 発送通知メールを送る。成功時は orders.shipment_mail_sent_at を更新する。
-     * 失敗しても例外は投げず false を返し、原因は order_mail_logs に残す。
+     * 注文確認メールを送信する。checkout.php の OrderMailService::notify($orderId) から呼ばれる。
+     * メール送信失敗時も注文自体は取り消さない。
      */
+    public static function notify(int $orderId): bool
+    {
+        try {
+            $order = Order::findForAdmin($orderId);
+            if ($order === null) {
+                error_log('Order confirmation mail failed: order not found. order_id=' . $orderId);
+                return false;
+            }
+
+            $to = trim((string) ($order['buyer_email'] ?? ''));
+            if (preg_match('/[\r\n]/', $to) === 1 || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
+                self::log($orderId, $to, 'failed', '宛先メールアドレスが不正です。', 'confirmation');
+                return false;
+            }
+
+            $orderNumber = (string) ($order['order_number'] ?? '');
+            $subject = '【OVERHAUL】ご注文ありがとうございます（注文番号：' . $orderNumber . '）';
+            $lines = [
+                'OVERHAUL',
+                '',
+                (string) ($order['buyer_name'] ?? '') . ' 様',
+                '',
+                'ご注文ありがとうございます。以下の内容でご注文を承りました。',
+                '',
+                '■ 注文番号：' . $orderNumber,
+                '',
+                '■ ご注文内容',
+            ];
+            foreach (($order['items'] ?? []) as $item) {
+                $lines[] = '・' . (string) ($item['name'] ?? '（商品情報なし）')
+                    . '　' . number_format((float) ($item['price'] ?? 0)) . '円';
+            }
+            $lines[] = '合計（税込）：' . number_format((float) ($order['total_price'] ?? 0)) . '円';
+            $lines[] = '';
+            $lines[] = '■ お届け先';
+            $lines[] = (string) ($order['shipping_recipient_name'] ?? '') . ' 様';
+            $lines[] = '〒' . (string) ($order['shipping_postal_code'] ?? '');
+            $lines[] = (string) ($order['shipping_prefecture'] ?? '')
+                . (string) ($order['shipping_city'] ?? '')
+                . (string) ($order['shipping_address_line'] ?? '')
+                . ' ' . (string) ($order['shipping_building'] ?? '');
+            $lines[] = '';
+            $lines[] = '発送が完了しましたら、改めてメールでご案内します。';
+            $lines[] = 'このメールは送信専用です。';
+
+            if (!Mailer::sendTextMail([$to], $subject, implode("\n", $lines))) {
+                self::log($orderId, $to, 'failed', 'SMTP送信に失敗しました。サーバーのエラーログを確認してください。', 'confirmation');
+                return false;
+            }
+
+            self::log($orderId, $to, 'sent', null, 'confirmation');
+            return true;
+        } catch (Throwable $exception) {
+            error_log('Order confirmation mail unexpected failure. order_id=' . $orderId . ' error=' . $exception->getMessage());
+            return false;
+        }
+    }
+
+    /** 発送通知メールを送る。成功時は orders.shipment_mail_sent_at を更新する。 */
     public static function sendShipmentNotice(int $orderId, string $receiptToken): bool
     {
         $order = Order::findForAdmin($orderId);
@@ -58,7 +114,6 @@ final class OrderMailService
         ]);
         $trackingUrl = self::trackingUrl((string) $order['shipping_carrier'], (string) $order['tracking_number']);
 
-        // 既存の管理者ログインコードのメールと同じ Mailer（PHPMailer）経由で送る
         if (!Mailer::sendShipmentNotice($to, $order, $receiptUrl, $trackingUrl)) {
             return self::fail($orderId, $to, 'SMTP送信に失敗しました。サーバーのエラーログ（Shipment notice SMTP delivery failed）を確認してください。');
         }
@@ -69,15 +124,7 @@ final class OrderMailService
         return true;
     }
 
-    /**
-     * 受取確認リンクの土台になるURL（末尾スラッシュなし）。未設定・http(s)以外は空文字。
-     *
-     * config.php の構成に合わせる:
-     *   site.url      = サイトのオリジン（例 https://example.com）… .env の SITE_URL
-     *   app.base_url  = アプリのパス接頭辞（例 /overhaul/public/、ルート直下なら /）… .env の BASE_URL
-     * app.base_url が http(s):// で始まるフルURLならそれをそのまま使う。
-     * どちらも無ければ環境変数 APP_BASE_URL（フルURL）を使う。
-     */
+    /** 受取確認リンクの土台になるURL（末尾スラッシュなし）。 */
     private static function baseUrl(): string
     {
         $config = require __DIR__ . '/../config/config.php';
@@ -106,7 +153,10 @@ final class OrderMailService
         return false;
     }
 
-    private static function log(int $orderId, string $to, string $status, ?string $error): void
+    /**
+     * @param string $mailType shipment または confirmation
+     */
+    private static function log(int $orderId, string $to, string $status, ?string $error, string $mailType = 'shipment'): void
     {
         try {
             $stmt = Database::getConnection()->prepare(
@@ -115,14 +165,13 @@ final class OrderMailService
             );
             $stmt->execute([
                 ':order_id'  => $orderId,
-                ':mail_type' => 'shipment',
+                ':mail_type' => $mailType,
                 ':recipient' => mb_substr($to, 0, 255),
                 ':status'    => $status,
                 ':error'     => $error !== null ? mb_substr($error, 0, 255) : null,
             ]);
         } catch (Throwable $exception) {
-            // ログ保存の失敗で発送処理自体を止めない
-            error_log('Order mail log insert failed.');
+            error_log('Order mail log insert failed: ' . $exception->getMessage());
         }
     }
 }

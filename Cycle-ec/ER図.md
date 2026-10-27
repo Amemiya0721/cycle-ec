@@ -1,4 +1,3 @@
-erDiagram
 
     USERS ||--o| USER_ADDRESSES : has
     USERS ||--o{ ORDERS : places
@@ -115,6 +114,7 @@ erDiagram
 
     ORDERS {
         int order_id PK "UNSIGNED AUTO_INCREMENT"
+        char order_number UK "CHAR(16) NOT NULL / 公開用UID"
         int user_id FK "UNSIGNED"
         decimal total_price "decimal(10,2)"
         varchar status "varchar(50) / 注文済み・発送済み・受取完了・キャンセル"

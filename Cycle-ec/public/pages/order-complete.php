@@ -24,7 +24,7 @@ $order = null;
 
 if ($orderId !== false && $orderId !== null && $orderId > 0) {
     try {
-        // 本人の注文だけ表示する（他人の注文番号を指定しても見えない）
+        // 本人の注文だけ表示する（他人の注文IDを指定しても見えない）
         $order = Order::findForUser($orderId, $userId);
     } catch (PDOException $exception) {
         error_log('Order fetch failed: ' . $exception->getMessage());
@@ -47,7 +47,7 @@ require_once __DIR__ . '/../includes/nav.php';
         <?php else: ?>
             <div class="alert alert-success">
                 <h1 class="h4">ご注文ありがとうございます</h1>
-                <p class="mb-0">注文番号: <?= (int) $order['order_id'] ?></p>
+                <p class="mb-0">注文番号: <?= h((string) $order['order_number']) ?></p>
             </div>
 
             <h2 class="h5 mt-4 mb-3">ご注文内容</h2>

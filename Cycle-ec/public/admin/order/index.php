@@ -172,7 +172,7 @@ require __DIR__ . '/../includes/header.php';
             <tbody>
                 <?php foreach ($result['items'] as $o): ?>
                     <tr>
-                        <td>#<?= (int) $o['order_id'] ?></td>
+                        <td>#<?= h((string) $o['order_number']) ?></td>
                         <td><?= h((string) $o['ordered_at']) ?></td>
                         <td><?= h((string) $o['buyer_name']) ?><br><small class="text-muted"><?= h((string) $o['buyer_email']) ?></small></td>
                         <td><?= h((string) $o['shipping_recipient_name']) ?> 様<br><small class="text-muted"><?= h((string) $o['shipping_prefecture'] . $o['shipping_city']) ?></small></td>
@@ -183,7 +183,7 @@ require __DIR__ . '/../includes/header.php';
                             <?php if ($o['status'] === Order::STATUS_ORDERED): ?>
                                 <div class="d-flex flex-column flex-sm-row gap-1">
                                     <a class="btn btn-sm btn-success text-nowrap w-100" href="ship.php?id=<?= (int) $o['order_id'] ?>">発送する</a>
-                                    <form method="post" class="m-0" onsubmit="return confirm('注文 #<?= (int) $o['order_id'] ?> をキャンセルします。在庫を復元します。よろしいですか？');">
+                                    <form method="post" class="m-0" onsubmit="return confirm('注文 #<?= h((string) $o['order_number']) ?> をキャンセルします。在庫を復元します。よろしいですか？');">
                                         <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
                                         <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
                                         <input type="hidden" name="target_status" value="<?= h(Order::STATUS_CANCELED) ?>">

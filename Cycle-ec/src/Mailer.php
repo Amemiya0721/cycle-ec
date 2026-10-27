@@ -97,7 +97,7 @@ class Mailer
         try {
             self::configure($mailer, $config['smtp']);
             $mailer->addAddress($recipient);
-            $mailer->Subject = '【OVERHAUL】発送のお知らせ（ご注文 #' . (int) $order['order_id'] . '）';
+            $mailer->Subject = '【OVERHAUL】発送のお知らせ（ご注文 #' . (string) $order['order_number'] . '）';
             $mailer->isHTML(true);
             $mailer->Body = self::shipmentHtmlBody($order, $receiptUrl, $trackingUrl);
             $mailer->AltBody = self::shipmentTextBody($order, $receiptUrl, $trackingUrl);
@@ -185,7 +185,7 @@ class Mailer
             '',
             'ご注文いただいた商品を発送いたしました。',
             '',
-            '■ 注文番号：#' . (int) $order['order_id'],
+            '■ 注文番号：#' . (string) $order['order_number'],
             '■ 配送会社：' . (string) $order['shipping_carrier'],
             '■ 追跡番号：' . (string) $order['tracking_number'],
         ];
@@ -222,7 +222,7 @@ class Mailer
             . '<p>' . $e((string) $order['buyer_name']) . ' 様</p>'
             . '<p>ご注文いただいた商品を発送いたしました。</p>'
             . '<table cellpadding="4" style="border-collapse:collapse">'
-            . '<tr><th align="left">注文番号</th><td>#' . (int) $order['order_id'] . '</td></tr>'
+            . '<tr><th align="left">注文番号</th><td>#' . (string) $order['order_number'] . '</td></tr>'
             . '<tr><th align="left">配送会社</th><td>' . $e((string) $order['shipping_carrier']) . '</td></tr>'
             . '<tr><th align="left">追跡番号</th><td>' . $e((string) $order['tracking_number']) . '</td></tr>';
         if ($trackingUrl !== null) {

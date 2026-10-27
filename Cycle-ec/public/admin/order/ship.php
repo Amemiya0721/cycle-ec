@@ -127,7 +127,7 @@ require __DIR__ . '/../includes/header.php';
 ?>
 <div class="admin-page-header">
     <div>
-        <h1>発送処理 <small class="text-muted">注文 #<?= (int) $order['order_id'] ?></small></h1>
+        <h1>発送処理 <small class="text-muted">注文 #<?= h((string) $order['order_number']) ?></small></h1>
         <p class="text-muted mb-0">配送情報を入力し、内容を確認してから発送を確定します。</p>
     </div>
     <a class="btn btn-sm btn-outline-secondary" href="index.php">一覧へ戻る</a>
