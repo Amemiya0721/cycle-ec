@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../src/Database.php';
-require_once __DIR__ . '/../../src/Category.php';
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '../../../../src/Database.php';
+require_once __DIR__ . '../../../../src/Category.php';
+require_once __DIR__ . '../../includes/auth.php';
 
 if (empty($_SESSION['category_reorder_csrf'])) {
     $_SESSION['category_reorder_csrf'] = bin2hex(random_bytes(32));
@@ -62,7 +62,7 @@ try {
 $adminTitle = 'カテゴリ管理';
 $activeMenu = 'categories';
 $breadcrumbs = [['label' => 'カテゴリ管理']];
-require __DIR__ . '/includes/header.php';
+require __DIR__ . '../../includes/header.php';
 ?>
 <div class="admin-page-header"><div><h1>カテゴリ管理</h1><p class="text-muted mb-0">ショップの商品分類を管理します。</p></div><a class="btn btn-primary" href="category_add.php">＋ カテゴリを追加</a></div>
 <?php foreach ($errors as $error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endforeach; ?>
@@ -97,4 +97,4 @@ require __DIR__ . '/includes/header.php';
     </tbody>
 </table></div></div>
 <script src="<?= h($baseUrl . 'assets/js/category-sort.js') ?>" defer></script>
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '../../includes/footer.php'; ?>

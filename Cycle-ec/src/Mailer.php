@@ -44,7 +44,7 @@ class Mailer
             $mailer->send();
             return true;
         } catch (\Throwable $exception) {
-            error_log('Configured text email delivery failed.');
+            error_log('Configured text email delivery failed: ' . $exception->getMessage());
             return false;
         }
     }
@@ -76,6 +76,35 @@ class Mailer
             return true;
         } catch (Exception $exception) {
             error_log('Admin login SMTP delivery failed: ' . $exception->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 発送通知メール（HTML + テキスト）。管理者ログインコードのメールと同じ作り。
+     *
+     * @param array $order findForAdmin() の結果（items を含む）
+     */
+    public static function sendShipmentNotice(string $recipient, array $order, string $receiptUrl, ?string $trackingUrl): bool
+    {
+        if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $config = require __DIR__ . '/../config/config.php';
+        $mailer = new PHPMailer(true);
+
+        try {
+            self::configure($mailer, $config['smtp']);
+            $mailer->addAddress($recipient);
+            $mailer->Subject = '【OVERHAUL】発送のお知らせ（ご注文 #' . (int) $order['order_id'] . '）';
+            $mailer->isHTML(true);
+            $mailer->Body = self::shipmentHtmlBody($order, $receiptUrl, $trackingUrl);
+            $mailer->AltBody = self::shipmentTextBody($order, $receiptUrl, $trackingUrl);
+            $mailer->send();
+            return true;
+        } catch (Exception $exception) {
+            error_log('Shipment notice SMTP delivery failed: ' . $exception->getMessage());
             return false;
         }
     }
@@ -137,5 +166,85 @@ class Mailer
             . '<p>このコードは10分間有効です。</p>'
             . '<p>心当たりがない場合は、このメールを無視してください。</p>'
             . '</body></html>';
+    }
+
+    private static function shipmentAddress(array $order): string
+    {
+        return trim(
+            (string) $order['shipping_prefecture'] . (string) $order['shipping_city']
+            . (string) $order['shipping_address_line'] . ' ' . (string) ($order['shipping_building'] ?? '')
+        );
+    }
+
+    private static function shipmentTextBody(array $order, string $receiptUrl, ?string $trackingUrl): string
+    {
+        $lines = [
+            'OVERHAUL',
+            '',
+            (string) $order['buyer_name'] . ' 様',
+            '',
+            'ご注文いただいた商品を発送いたしました。',
+            '',
+            '■ 注文番号：#' . (int) $order['order_id'],
+            '■ 配送会社：' . (string) $order['shipping_carrier'],
+            '■ 追跡番号：' . (string) $order['tracking_number'],
+        ];
+        if ($trackingUrl !== null) {
+            $lines[] = '■ 配送状況の確認：' . $trackingUrl;
+        }
+        $lines[] = '';
+        $lines[] = '■ お届け先';
+        $lines[] = (string) $order['shipping_recipient_name'] . ' 様';
+        $lines[] = '〒' . (string) $order['shipping_postal_code'];
+        $lines[] = self::shipmentAddress($order);
+        $lines[] = '';
+        $lines[] = '■ ご注文内容';
+        foreach ($order['items'] as $item) {
+            $lines[] = '・' . (string) ($item['name'] ?? '（商品情報なし）') . '　' . number_format((float) $item['price']) . '円';
+        }
+        $lines[] = '合計：' . number_format((float) $order['total_price']) . '円';
+        $lines[] = '';
+        $lines[] = '商品がお手元に届きましたら、下記のリンクから受取確認をお願いいたします。';
+        $lines[] = '（ログインが必要です。ご注文されたご本人のみ操作できます）';
+        $lines[] = $receiptUrl;
+        $lines[] = '';
+        $lines[] = 'このメールは送信専用です。';
+
+        return implode("\n", $lines);
+    }
+
+    private static function shipmentHtmlBody(array $order, string $receiptUrl, ?string $trackingUrl): string
+    {
+        $e = static fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+
+        $html = '<!doctype html><html lang="ja"><body>'
+            . '<h1>OVERHAUL</h1>'
+            . '<p>' . $e((string) $order['buyer_name']) . ' 様</p>'
+            . '<p>ご注文いただいた商品を発送いたしました。</p>'
+            . '<table cellpadding="4" style="border-collapse:collapse">'
+            . '<tr><th align="left">注文番号</th><td>#' . (int) $order['order_id'] . '</td></tr>'
+            . '<tr><th align="left">配送会社</th><td>' . $e((string) $order['shipping_carrier']) . '</td></tr>'
+            . '<tr><th align="left">追跡番号</th><td>' . $e((string) $order['tracking_number']) . '</td></tr>';
+        if ($trackingUrl !== null) {
+            $html .= '<tr><th align="left">配送状況</th><td><a href="' . $e($trackingUrl) . '">配送状況を確認する</a></td></tr>';
+        }
+        $html .= '</table>'
+            . '<h2 style="font-size:16px">お届け先</h2>'
+            . '<p>' . $e((string) $order['shipping_recipient_name']) . ' 様<br>'
+            . '〒' . $e((string) $order['shipping_postal_code']) . '<br>'
+            . $e(self::shipmentAddress($order)) . '</p>'
+            . '<h2 style="font-size:16px">ご注文内容</h2><ul>';
+        foreach ($order['items'] as $item) {
+            $html .= '<li>' . $e((string) ($item['name'] ?? '（商品情報なし）')) . '　'
+                . number_format((float) $item['price']) . '円</li>';
+        }
+        $html .= '</ul><p><strong>合計：' . number_format((float) $order['total_price']) . '円</strong></p>'
+            . '<p>商品がお手元に届きましたら、下記のボタンから受取確認をお願いいたします。<br>'
+            . '<small>（ログインが必要です。ご注文されたご本人のみ操作できます）</small></p>'
+            . '<p><a href="' . $e($receiptUrl) . '" style="display:inline-block;padding:10px 20px;background:#198754;color:#fff;text-decoration:none;border-radius:4px">受取確認をする</a></p>'
+            . '<p><small>このメールは送信専用です。</small></p>'
+            . '</body></html>';
+
+        return $html;
     }
 }

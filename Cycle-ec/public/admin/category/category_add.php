@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../src/Database.php';
-require_once __DIR__ . '/../../src/Category.php';
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '../../../../src/Database.php';
+require_once __DIR__ . '../../../../src/Category.php';
+require_once __DIR__ . '../../includes/auth.php';
 
 const MAX_CATEGORY_NAME_LENGTH = 100;
 const MAX_CATEGORY_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -110,7 +110,7 @@ $breadcrumbs = [
     ['label' => 'カテゴリ管理', 'url' => 'categories.php'],
     ['label' => 'カテゴリ追加'],
 ];
-require __DIR__ . '/includes/header.php';
+require __DIR__ . '../../includes/header.php';
 ?>
 <div class="admin-page-header"><div><h1>カテゴリ追加</h1><p class="text-muted mb-0">新しい商品分類を登録します。</p></div></div>
     <?php if ($errors): ?>
@@ -134,4 +134,4 @@ require __DIR__ . '/includes/header.php';
                 <div class="d-flex justify-content-between mt-4"><a href="categories.php" class="btn btn-outline-secondary">キャンセル</a><button type="submit" class="btn btn-primary">追加する</button></div>
             </form>
     </div>
-<?php require __DIR__ . '/includes/footer.php'; ?>
+<?php require __DIR__ . '../../includes/footer.php'; ?>

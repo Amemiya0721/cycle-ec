@@ -1133,3 +1133,17 @@ footer {
     transition-duration: .01ms;
   }
 }
+
+.hero {
+    position: relative;
+    background-image:
+        linear-gradient(
+            rgba(0, 0, 0, 0.35),
+            rgba(0, 0, 0, 0.35)
+        ),
+        url('../img/陽射し差し込む自転車工房.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}

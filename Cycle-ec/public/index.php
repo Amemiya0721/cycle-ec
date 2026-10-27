@@ -1,9 +1,9 @@
 <?php
- 
+
 $config = require __DIR__ . '/../config/config.php';
- 
+
 $baseUrl = $config['app']['base_url'];
- 
+
 require_once __DIR__ . '/../src/Category.php';
 require_once __DIR__ . '/../src/Product.php';
 $categories = [];
@@ -22,46 +22,37 @@ try {
 } catch (Throwable $e) {
     error_log('Top page category loading failed: ' . $e->getMessage());
 }
- 
+
 function h(?string $value): string
 {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
- 
+
 $pageCss = 'index.css';
- 
+
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/nav.php';
- 
+
 ?>
- 
+
 <!-- HERO -->
 <section class="hero">
     <div class="hero-bike" aria-hidden="true">
-        <svg viewBox="0 0 640 440" width="100%" height="100%">
-            <g fill="none" stroke="#e8b923" stroke-width="5" opacity="0.55">
-                <circle cx="150" cy="330" r="95" />
-                <circle cx="470" cy="330" r="95" />
-                <path d="M150 330 L300 150 L470 330 L300 330 L220 200 L390 200" />
-                <path d="M300 150 L340 150" />
-                <path d="M150 330 L60 330" />
-            </g>
-        </svg>
     </div>
- 
+
     <div class="container h-100 d-flex align-items-center">
         <div class="hero-inner">
- 
+
             <h1>
                 ここにタイトル<br>
                 ここにサブタイトル
             </h1>
- 
+
             <p>
                 OVERHAULは、使えるものを必要な人へつなぐ<br>
                 中古ロードバイク・自転車パーツ専門店です。
             </p>
- 
+
             <div class="d-flex gap-3 hero-cta">
                 <a
                     href="<?= $baseUrl ?>pages/products.php?condition%5B%5D=JUNK"
@@ -69,32 +60,32 @@ require_once __DIR__ . '/includes/nav.php';
                     ジャンク一覧を見る
                 </a>
             </div>
- 
+
         </div>
     </div>
 </section>
- 
- 
+
+
 <!-- RECOMMEND -->
 <section id="recommend">
- 
+
     <div class="container">
- 
+
         <div class="section-head d-flex align-items-baseline justify-content-between">
- 
+
             <div>
                 <span class="section-label">OVERHAUL PICKS</span>
                 <h2>おすすめ商品</h2>
             </div>
- 
+
             <a
                 href="<?= $baseUrl ?>pages/products.php"
                 class="more-link">
                 一覧を見る &gt;
             </a>
         </div>
- 
- 
+
+
         <!-- SWIPER -->
         <div class="swiper recommend-swiper">
             <div class="swiper-wrapper">
@@ -119,31 +110,33 @@ require_once __DIR__ . '/includes/nav.php';
                     </div>
                 <?php endforeach; ?>
                 <?php if (!$recommendedProducts): ?>
-                    <div class="swiper-slide"><p class="text-muted py-4">おすすめ商品は準備中です。</p></div>
+                    <div class="swiper-slide">
+                        <p class="text-muted py-4">おすすめ商品は準備中です。</p>
+                    </div>
                 <?php endif; ?>
             </div>
- 
+
             <!-- NAVIGATION -->
             <div class="swiper-button-prev"></div>
             <div class="swiper-button-next"></div>
- 
+
             <!-- PAGINATION -->
             <div class="swiper-pagination"></div>
- 
+
         </div>
- 
+
     </div>
- 
+
 </section>
- 
+
 <!-- CATEGORY -->
 <section id="category">
     <div class="container">
- 
+
         <h2 class="cat-title">
             カテゴリから探す
         </h2>
- 
+
         <div class="row g-3" id="cat-grid">
             <?php foreach ($categories as $category): ?>
                 <div class="col-6 col-lg">
@@ -160,27 +153,27 @@ require_once __DIR__ . '/includes/nav.php';
                 </div>
             <?php endforeach; ?>
         </div>
- 
+
     </div>
 </section>
- 
- 
+
+
 <!-- NEW PRODUCTS -->
 <section id="new-products">
     <div class="container">
- 
+
         <div class="section-head d-flex align-items-baseline justify-content-between">
- 
+
             <h2>新着商品</h2>
- 
+
             <a
                 href="<?= $baseUrl ?>pages/products.php?sort=newest"
                 class="more-link">
                 一覧を見る &gt;
             </a>
- 
+
         </div>
- 
+
         <div class="row g-3" id="new-grid">
             <?php foreach ($newProducts as $product): ?>
                 <div class="col-6 col-md-4 col-lg">
@@ -202,24 +195,26 @@ require_once __DIR__ . '/includes/nav.php';
                 </div>
             <?php endforeach; ?>
             <?php if (!$newProducts): ?>
-                <div class="col-12"><p class="text-muted">商品はまだありません。</p></div>
+                <div class="col-12">
+                    <p class="text-muted">商品はまだありません。</p>
+                </div>
             <?php endif; ?>
         </div>
- 
+
     </div>
 </section>
- 
- 
+
+
 <!-- PRICE DOWN -->
 <section id="pricedown">
     <div class="container">
- 
+
         <div class="section-head d-flex align-items-baseline justify-content-between">
- 
+
             <h2>値下げしました</h2>
- 
+
         </div>
- 
+
         <div class="row g-3" id="down-grid">
             <?php foreach ($priceReducedProducts as $product): ?>
                 <?php $discountRate = (int) round((1 - ((float) $product['price'] / (float) $product['old_price'])) * 100); ?>
@@ -247,24 +242,26 @@ require_once __DIR__ . '/includes/nav.php';
                 </div>
             <?php endforeach; ?>
             <?php if (!$priceReducedProducts): ?>
-                <div class="col-12"><p class="text-muted">値下げ商品はありません。</p></div>
+                <div class="col-12">
+                    <p class="text-muted">値下げ商品はありません。</p>
+                </div>
             <?php endif; ?>
         </div>
- 
+
     </div>
 </section>
- 
- 
+
+
 <!-- CONDITION -->
 <section>
     <div class="container">
- 
+
         <h2 class="cond-title">
             商品状態について
         </h2>
- 
+
         <div class="row g-4 g-lg-0" id="cond-grid">
- 
+
             <div class="col-6 col-lg cond-item">
                 <div class="cond-rank">Sランク</div>
                 <div class="cond-desc">未使用・新品同等</div>
@@ -273,7 +270,7 @@ require_once __DIR__ . '/includes/nav.php';
                     非常にきれいな状態
                 </div>
             </div>
- 
+
             <div class="col-6 col-lg cond-item">
                 <div class="cond-rank">Aランク</div>
                 <div class="cond-desc">使用感が少ない良品</div>
@@ -282,7 +279,7 @@ require_once __DIR__ . '/includes/nav.php';
                     全体的にきれいな状態
                 </div>
             </div>
- 
+
             <div class="col-6 col-lg cond-item">
                 <div class="cond-rank">Bランク</div>
                 <div class="cond-desc">通常使用の中古品</div>
@@ -291,7 +288,7 @@ require_once __DIR__ . '/includes/nav.php';
                     あるが使用に問題なし
                 </div>
             </div>
- 
+
             <div class="col-6 col-lg cond-item">
                 <div class="cond-rank">Cランク</div>
                 <div class="cond-desc">傷・使用感が目立つ</div>
@@ -300,7 +297,7 @@ require_once __DIR__ . '/includes/nav.php';
                     使用感のある状態
                 </div>
             </div>
- 
+
             <div class="col-6 col-lg cond-item junk">
                 <div class="cond-rank">JUNK</div>
                 <div class="cond-desc">動作保証なし・現状販売</div>
@@ -312,38 +309,38 @@ require_once __DIR__ . '/includes/nav.php';
                     返品・返金対象外
                 </div>
             </div>
- 
+
         </div>
- 
+
     </div>
 </section>
- 
- 
+
+
 <!-- ABOUT / INFO -->
 <section id="about">
     <div class="container">
- 
+
         <div class="row g-5">
- 
+
             <div class="col-lg-6">
- 
+
                 <h3>OVERHAULについて</h3>
- 
+
                 <p>
                     OVERHAULは、中古ロードバイク・自転車パーツを専門に取り扱うショップです。
                     一つひとつ丁寧に検品・撮影し、商品の状態をできるだけわかりやすく掲載しています。
                     一点物の出会いを、ぜひお楽しみください。
                 </p>
- 
+
             </div>
- 
- 
+
+
             <div class="col-lg-6">
- 
+
                 <h3>INFORMATION</h3>
- 
+
                 <div class="row g-4">
- 
+
                     <div class="col-6 info-item">
                         <div class="info-icon"></div>
                         <div>
@@ -351,7 +348,7 @@ require_once __DIR__ . '/includes/nav.php';
                             <p>商品の状態についてのご案内</p>
                         </div>
                     </div>
- 
+
                     <div class="col-6 info-item">
                         <div class="info-icon"></div>
                         <div>
@@ -359,7 +356,7 @@ require_once __DIR__ . '/includes/nav.php';
                             <p>配送方法・送料について</p>
                         </div>
                     </div>
- 
+
                     <div class="col-6 info-item">
                         <div class="info-icon"></div>
                         <div>
@@ -367,7 +364,7 @@ require_once __DIR__ . '/includes/nav.php';
                             <p>ジャンク品の注意事項はこちら</p>
                         </div>
                     </div>
- 
+
                     <div class="col-6 info-item">
                         <div class="info-icon"></div>
                         <div>
@@ -375,21 +372,21 @@ require_once __DIR__ . '/includes/nav.php';
                             <p>返品・返金ポリシーはこちら</p>
                         </div>
                     </div>
- 
+
                 </div>
- 
+
             </div>
- 
+
         </div>
- 
+
     </div>
 </section>
- 
- 
+
+
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
- 
+
 <script src="<?= $baseUrl ?>assets/js/index.js"></script>
 <script src="<?= $baseUrl ?>assets/js/Samplescript.js"></script>
 <script src="<?= $baseUrl ?>assets/js/fuwatto-animation.js"></script>
- 
+
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

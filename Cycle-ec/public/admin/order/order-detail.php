@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../../src/UserAddress.php';
 require_once __DIR__ . '/../../../src/Order.php';
+require_once __DIR__ . '/../../../src/OrderMailService.php';
 require_once __DIR__ . '/../includes/auth.php';
 
 function h(?string $value): string
@@ -28,6 +29,13 @@ if ($order === null) {
     http_response_code(404);
     exit('注文が見つかりません。');
 }
+
+$hasShipment = !empty($order['tracking_number']);
+$trackingUrl = $hasShipment
+    ? OrderMailService::trackingUrl((string) $order['shipping_carrier'], (string) $order['tracking_number'])
+    : null;
+$canShip = $order['status'] === Order::STATUS_ORDERED;
+$canResend = $order['status'] === Order::STATUS_SHIPPED && $hasShipment;
 
 $adminTitle = '注文詳細';
 $activeMenu = 'orders';
@@ -54,6 +62,39 @@ require __DIR__ . '/../includes/header.php';
         <p class="mb-0">TEL: <?= h((string) $order['shipping_phone_number']) ?></p>
     </div></div>
 </div>
+
+<?php if ($hasShipment || $canShip): ?>
+<div class="admin-card bg-white p-3 mb-4">
+    <h2 class="admin-section-title">発送情報</h2>
+    <?php if ($hasShipment): ?>
+        <dl class="row mb-2">
+            <dt class="col-sm-3 col-md-2">配送会社</dt><dd class="col-sm-9 col-md-10"><?= h((string) $order['shipping_carrier']) ?></dd>
+            <dt class="col-sm-3 col-md-2">追跡番号</dt>
+            <dd class="col-sm-9 col-md-10">
+                <?= h((string) $order['tracking_number']) ?>
+                <?php if ($trackingUrl !== null): ?><a class="ms-2 small" href="<?= h($trackingUrl) ?>" target="_blank" rel="noopener noreferrer">配送状況を確認</a><?php endif; ?>
+            </dd>
+            <dt class="col-sm-3 col-md-2">発送日時</dt><dd class="col-sm-9 col-md-10"><?= h((string) ($order['shipped_at'] ?? '')) ?></dd>
+            <dt class="col-sm-3 col-md-2">通知メール</dt>
+            <dd class="col-sm-9 col-md-10">
+                <?php if ($order['shipment_mail_sent_at'] !== null): ?>
+                    送信済み（<?= h((string) $order['shipment_mail_sent_at']) ?>）
+                <?php else: ?>
+                    <span class="text-danger">未送信</span>
+                <?php endif; ?>
+            </dd>
+            <dt class="col-sm-3 col-md-2">受取確認</dt>
+            <dd class="col-sm-9 col-md-10">
+                <?= $order['received_at'] !== null ? h((string) $order['received_at']) . ' に確認済み' : '<span class="text-muted">未確認</span>' ?>
+            </dd>
+        </dl>
+    <?php else: ?>
+        <p class="text-muted">まだ発送されていません。</p>
+    <?php endif; ?>
+    <?php if ($canShip): ?><a class="btn btn-sm btn-success" href="ship.php?id=<?= (int) $order['order_id'] ?>">発送する</a><?php endif; ?>
+    <?php if ($canResend): ?><a class="btn btn-sm btn-outline-primary" href="ship.php?id=<?= (int) $order['order_id'] ?>">通知メールを再送する</a><?php endif; ?>
+</div>
+<?php endif; ?>
 
 <section class="admin-card bg-white">
     <div class="p-3 border-bottom"><h2 class="admin-section-title mb-0">注文商品</h2></div>

@@ -1,4 +1,3 @@
-
 erDiagram
 
     USERS ||--o| USER_ADDRESSES : has
@@ -15,6 +14,7 @@ erDiagram
     PRODUCTS ||--o{ CART_ITEMS : added_to
 
     ORDERS ||--|{ ORDER_ITEMS : contains
+    ORDERS ||--o{ ORDER_MAIL_LOGS : logs
 
     CARTS ||--o{ CART_ITEMS : contains
 
@@ -114,10 +114,16 @@ erDiagram
     }
 
     ORDERS {
-        int order_id PK
-        int user_id FK
-        decimal total_price
-        varchar status
+        int order_id PK "UNSIGNED AUTO_INCREMENT"
+        int user_id FK "UNSIGNED"
+        decimal total_price "decimal(10,2)"
+        varchar status "varchar(50) / 注文済み・発送済み・受取完了・キャンセル"
+        varchar shipping_carrier "NULL / 配送会社"
+        varchar tracking_number "NULL / 追跡番号"
+        datetime shipped_at "NULL / 発送日時"
+        datetime shipment_mail_sent_at "NULL / 発送通知メール送信日時（NULL=未送信）"
+        char receipt_token_hash "NULL / CHAR(64) / 受取確認トークンのSHA-256"
+        datetime received_at "NULL / 受取確認日時"
         varchar shipping_postal_code
         varchar shipping_prefecture
         varchar shipping_city
@@ -134,6 +140,16 @@ erDiagram
         int order_id FK
         int product_id FK
         decimal price
+        datetime created_at
+    }
+
+    ORDER_MAIL_LOGS {
+        bigint log_id PK "UNSIGNED AUTO_INCREMENT"
+        int order_id FK "UNSIGNED"
+        varchar mail_type "例: shipment"
+        varchar recipient
+        varchar status "sent / failed"
+        varchar error_message "NULL"
         datetime created_at
     }
 

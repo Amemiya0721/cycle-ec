@@ -32,6 +32,7 @@ if (!is_array($actionMessage)) {
     $actionMessage = null;
 }
 
+// この画面のPOSTはキャンセル専用。発送は ship.php（配送情報の入力・確認・メール通知つき）で行う。
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrfToken = $_POST['csrf_token'] ?? null;
     $csrfValid = is_string($csrfToken)
@@ -55,20 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'type' => 'danger',
                 'text' => '注文IDまたは操作内容が正しくありません。',
             ];
-        } elseif (!in_array($targetStatus, [Order::STATUS_SHIPPED, Order::STATUS_CANCELED], true)) {
+        } elseif ($targetStatus !== Order::STATUS_CANCELED) {
             $_SESSION['order_status_flash'] = [
                 'type' => 'danger',
                 'text' => '許可されていない注文操作です。',
             ];
         } else {
             try {
-                if (Order::transitionStatus((int) $orderId, $targetStatus)) {
-                    $actionText = $targetStatus === Order::STATUS_SHIPPED
-                        ? '発送済みにしました。'
-                        : 'キャンセルし、在庫を復元しました。';
+                if (Order::transitionStatus((int) $orderId, Order::STATUS_CANCELED)) {
                     $_SESSION['order_status_flash'] = [
                         'type' => 'success',
-                        'text' => '注文 #' . (int) $orderId . ' を' . $actionText,
+                        'text' => '注文 #' . (int) $orderId . ' をキャンセルし、在庫を復元しました。',
                     ];
                 } else {
                     $_SESSION['order_status_flash'] = [
@@ -184,41 +182,7 @@ require __DIR__ . '/../includes/header.php';
                         <td>
                             <?php if ($o['status'] === Order::STATUS_ORDERED): ?>
                                 <div class="d-flex flex-column flex-sm-row gap-1">
-                                    <form method="post" class="m-0">
-                                        <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
-                                        <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
-                                        <input type="hidden" name="target_status" value="<?= h(Order::STATUS_SHIPPED) ?>">
-                                        <input type="hidden" name="return_status" value="<?= h($status) ?>">
-                                        <input type="hidden" name="return_keyword" value="<?= h($keyword) ?>">
-                                        <input type="hidden" name="return_page" value="<?= (int) $result['page'] ?>">
-
-                                        /*
-                                        * TODO: 発送管理機能の実装
-                                        *
-                                        * 1. 「発送する」ボタンから配送情報入力画面へ遷移
-                                        * 2. 配送会社・追跡番号を入力
-                                        * 3. 発送内容を確認して確定
-                                        * 4. 注文ステータスを「発送済み」に変更
-                                        * 5. 購入者へ発送通知メールを自動送信
-                                        * 6. メールに配送追跡URLと受取確認リンクを記載
-                                        * 7. 購入者が受取確認すると「受取完了」に変更
-                                        *
-                                        * セキュリティ:
-                                        * - 管理者認証・CSRF対策
-                                        * - 注文ステータスの二重更新防止
-                                        * - メール送信失敗時の記録と再送
-                                        * - 受取確認は注文者本人のみ実行可能
-                                        *
-                                        * 関連:
-                                        * - src/Order.php
-                                        * - src/OrderMailService.php
-                                        * - admin/order/ship.php（新規作成予定）
-                                        * - pages/order-detail.php
-                                        */
-
-
-                                        <button class="btn btn-sm btn-success text-nowrap w-100" type="submit">発送済みにする</button>
-                                    </form>
+                                    <a class="btn btn-sm btn-success text-nowrap w-100" href="ship.php?id=<?= (int) $o['order_id'] ?>">発送する</a>
                                     <form method="post" class="m-0" onsubmit="return confirm('注文 #<?= (int) $o['order_id'] ?> をキャンセルします。在庫を復元します。よろしいですか？');">
                                         <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
                                         <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
@@ -231,6 +195,11 @@ require __DIR__ . '/../includes/header.php';
                                 </div>
                             <?php elseif ($o['status'] === Order::STATUS_SHIPPED): ?>
                                 <span class="badge text-bg-success">発送済み</span>
+                                <?php if ($o['tracking_number'] !== null && $o['shipment_mail_sent_at'] === null): ?>
+                                    <a class="badge text-bg-warning text-decoration-none" href="ship.php?id=<?= (int) $o['order_id'] ?>">通知未送信</a>
+                                <?php endif; ?>
+                            <?php elseif ($o['status'] === Order::STATUS_RECEIVED): ?>
+                                <span class="badge text-bg-primary">受取完了</span>
                             <?php elseif ($o['status'] === Order::STATUS_CANCELED): ?>
                                 <span class="badge text-bg-secondary">キャンセル済み</span>
                             <?php else: ?>

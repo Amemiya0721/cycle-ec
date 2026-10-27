@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../src/Database.php';
-require_once __DIR__ . '/../../src/Category.php';
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/../../../src/Database.php';
+require_once __DIR__ . '/../../../src/Category.php';
+require_once __DIR__ . '../../includes/auth.php';
 
 const MAX_CATEGORY_NAME_LENGTH = 100;
 const MAX_CATEGORY_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -124,7 +124,7 @@ $breadcrumbs = [
     ['label' => 'カテゴリ管理', 'url' => 'categories.php'],
     ['label' => 'カテゴリ編集'],
 ];
-require __DIR__ . '/includes/header.php';
+require __DIR__ . '../../includes/header.php';
 ?>
 <div class="admin-page-header"><div><h1>カテゴリ編集</h1><p class="text-muted mb-0">カテゴリ情報を更新します。</p></div></div>
     <div class="admin-form-section">
@@ -137,4 +137,4 @@ require __DIR__ . '/includes/header.php';
             <div class="d-flex justify-content-between"><a class="btn btn-outline-secondary" href="categories.php">戻る</a><button class="btn btn-primary" type="submit">保存する</button></div>
         </form>
             </div>
-        <?php require __DIR__ . '/includes/footer.php'; ?>
+        <?php require __DIR__ . '../../includes/footer.php'; ?>
