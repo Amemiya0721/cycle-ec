@@ -46,7 +46,7 @@ require __DIR__ . '/includes/header.php';
 ?>
 <div class="admin-page-header">
 	<div>
-		<h1>ダッシュボード</h1>
+		<h1>ダッシュボード（開発中）</h1>
 		<p class="text-muted mb-0">今日の運用状況を確認できます。</p>
 	</div>
 	<a class="btn btn-primary" href="products/product-create.php">＋ 商品を追加</a>

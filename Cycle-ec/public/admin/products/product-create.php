@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         && ctype_digit((string) $stockQuantity)
         && (int) $stockQuantity === 0
     ) {
-        $errors[] = '在庫数が0の商品は販売中にできません。売切れまたは準備中を選択してください。';
+        $errors[] = '在庫数が0の商品は販売中にできません。売切れまたは下書きを選択してください。';
     }
 
 
@@ -330,7 +330,7 @@ require __DIR__ . '/../includes/header.php';
                             <option value="">選択してください</option>
                             <option value="販売中" <?= ($status ?? '') === '販売中' ? 'selected' : '' ?>>販売中</option>
                             <option value="売切れ" <?= ($status ?? '') === '売切れ' ? 'selected' : '' ?>>売切れ</option>
-                            <option value="準備中" <?= ($status ?? '') === '準備中' ? 'selected' : '' ?>>準備中</option>
+                            <option value="下書き" <?= ($status ?? '') === '下書き' ? 'selected' : '' ?>>下書き</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">

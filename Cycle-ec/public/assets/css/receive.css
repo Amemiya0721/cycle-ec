@@ -1,0 +1,112 @@
+/* OVERHAUL - 受取確認画面 */
+:root {
+  --receive-ink: #202631;
+  --receive-muted: #687383;
+  --receive-line: #e3e7ec;
+  --receive-accent: #bc3434;
+  --receive-accent-hover: #9d2727;
+  --receive-bg: #f5f6f8;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--receive-bg);
+  color: var(--receive-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  line-height: 1.7;
+}
+
+.receive-page {
+  width: min(100% - 32px, 620px);
+  margin: clamp(40px, 8vh, 100px) auto;
+}
+.receive-card {
+  padding: clamp(24px, 5vw, 44px);
+  background: #fff;
+  border: 1px solid var(--receive-line);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(24, 32, 46, .045);
+}
+.receive-eyebrow {
+  margin: 0 0 8px;
+  color: var(--receive-accent);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+.receive-title {
+  margin: 0 0 24px;
+  font-size: clamp(24px, 5vw, 30px);
+  line-height: 1.35;
+  font-weight: 750;
+}
+.receive-card p { margin: 0 0 18px; }
+.receive-order-number {
+  display: inline-block;
+  margin: 0 0 20px;
+  padding: 8px 12px;
+  background: #f5f6f8;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 14px;
+  letter-spacing: .04em;
+  overflow-wrap: anywhere;
+}
+.receive-section-title {
+  margin: 24px 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.receive-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  border-top: 1px solid var(--receive-line);
+}
+.receive-items li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--receive-line);
+  overflow-wrap: anywhere;
+}
+.receive-shipping {
+  padding: 16px;
+  margin: 0 0 26px;
+  border: 1px solid var(--receive-line);
+  border-radius: 8px;
+  background: #fafbfc;
+  color: var(--receive-muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.receive-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1px solid var(--receive-accent);
+  border-radius: 6px;
+  background: var(--receive-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.receive-button:hover { background: var(--receive-accent-hover); border-color: var(--receive-accent-hover); color: #fff; }
+.receive-button:focus-visible, .receive-link:focus-visible { outline: 3px solid #ee9c9c; outline-offset: 3px; }
+.receive-note { color: var(--receive-muted); font-size: 13px; }
+.receive-link { color: var(--receive-accent); text-underline-offset: 3px; }
+.receive-status { margin: 0 0 20px; padding: 16px; border-radius: 8px; background: #f3f5f7; }
+.receive-status--success { background: #edf7f1; color: #22583b; }
+.receive-status--error { background: #fff3f2; color: #8b3030; }
+@media (max-width: 480px) {
+  .receive-page { width: min(100% - 24px, 620px); margin: 24px auto; }
+  .receive-card { padding: 24px 20px; }
+  .receive-button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .receive-button { transition: none; }
+}

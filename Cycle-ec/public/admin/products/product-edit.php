@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         && ctype_digit((string) $data['stock_quantity'])
         && (int) $data['stock_quantity'] === 0
     ) {
-        $errors[] = '在庫数が0の商品は販売中にできません。売切れまたは準備中を選択してください。';
+        $errors[] = '在庫数が0の商品は販売中にできません。売切れまたは下書きを選択してください。';
     }
 
     // 画像バリデーション（新規追加分のみ）

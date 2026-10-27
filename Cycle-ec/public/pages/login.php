@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 require_once __DIR__ . '/../../src/User.php';
 require_once __DIR__ . '/../../src/AdminLoginVerification.php';
 require_once __DIR__ . '/../../src/Mailer.php';
@@ -11,6 +13,41 @@ $errors = [];
 $email = trim((string) ($_POST['email'] ?? ''));
 if (empty($_SESSION['login_csrf'])) {
     $_SESSION['login_csrf'] = bin2hex(random_bytes(32));
+}
+
+/** 許可済みのサイト内ページだけへログイン後に移動する。 */
+function loginRedirectTarget(mixed $candidate): string
+{
+    if (!is_string($candidate)) {
+        return '../index.php';
+    }
+    if (in_array($candidate, ['checkout.php', '../index.php'], true)) {
+        return $candidate;
+    }
+
+    // 受取確認リンクは内部 order_id と64桁のトークンだけを許可。
+    $parts = parse_url($candidate);
+    if (
+        $parts === false || ($parts['path'] ?? '') !== 'receive.php'
+        || isset($parts['scheme'], $parts['host'])
+        || isset($parts['fragment']) || !isset($parts['query'])
+    ) {
+        return '../index.php';
+    }
+    parse_str($parts['query'], $query);
+    if (
+        count($query) !== 2
+        || !isset($query['order'], $query['token'])
+        || !is_string($query['order']) || !is_string($query['token'])
+        || preg_match('/^[1-9][0-9]*$/D', $query['order']) !== 1
+        || preg_match('/^[0-9a-f]{64}$/D', $query['token']) !== 1
+    ) {
+        return '../index.php';
+    }
+    return 'receive.php?' . http_build_query([
+        'order' => $query['order'],
+        'token' => $query['token'],
+    ]);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -48,24 +85,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $errors[] = '確認メールを送信できませんでした。時間をおいて再度お試しください。';
                     } else {
                         $_SESSION['admin_verification_id'] = $verificationId;
-                        header('Location: admin_verify.php');
+                        header('Location: admin_verify.php', true, 303);
                         exit;
                     }
                 } else {
-                    $redirect = $_SESSION['redirect_after_login']
-                        ?? '../index.php';
-
+                    $redirect = loginRedirectTarget($_SESSION['redirect_after_login'] ?? null);
                     unset($_SESSION['redirect_after_login']);
-
-                    if (!in_array(
-                        $redirect,
-                        ['checkout.php', '../index.php'],
-                        true
-                    )) {
-                        $redirect = '../index.php';
-                    }
-
-                    header('Location: ' . $redirect);
+                    header('Location: ' . $redirect, true, 303);
                     exit;
                 }
             }
@@ -79,20 +105,31 @@ function h(?string $value): string
 {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
-/*
-|--------------------------------------------------------------------------
-| 5. 共通レイアウト
-|--------------------------------------------------------------------------
-*/
 require_once __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../includes/nav.php'; ?>
+require_once __DIR__ . '/../includes/nav.php';
+?>
 
 <main class="container py-5" style="max-width:640px">
     <div class="card shadow-sm">
         <div class="card-body p-4">
-            <h1 class="h3 mb-4">ログイン</h1><?php if (isset($_GET['registered'])): ?><div class="alert alert-success">登録が完了しました。ログインしてください。</div><?php endif; ?><?php foreach ($errors as $error): ?><div class="alert alert-danger"><?= h($error) ?></div><?php endforeach; ?><form method="post"><input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['login_csrf']) ?>">
-                <div class="mb-3"><label class="form-label" for="email">メールアドレス</label><input class="form-control" type="email" id="email" name="email" value="<?= h($email) ?>" required></div>
-                <div class="mb-4"><label class="form-label" for="password">パスワード</label><input class="form-control" type="password" id="password" name="password" required></div><button class="btn btn-primary w-100" type="submit">ログイン</button>
+            <h1 class="h3 mb-4">ログイン</h1>
+            <?php if (isset($_GET['registered'])): ?>
+                <div class="alert alert-success">登録が完了しました。ログインしてください。</div>
+            <?php endif; ?>
+            <?php foreach ($errors as $error): ?>
+                <div class="alert alert-danger"><?= h($error) ?></div>
+            <?php endforeach; ?>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['login_csrf']) ?>">
+                <div class="mb-3">
+                    <label class="form-label" for="email">メールアドレス</label>
+                    <input class="form-control" type="email" id="email" name="email" value="<?= h($email) ?>" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label" for="password">パスワード</label>
+                    <input class="form-control" type="password" id="password" name="password" required>
+                </div>
+                <button class="btn btn-primary w-100" type="submit">ログイン</button>
             </form>
             <p class="mt-3 mb-0 text-center"><a href="register.php">新規登録はこちら</a></p>
         </div>
