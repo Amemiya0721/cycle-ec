@@ -131,6 +131,7 @@ require_once __DIR__ . '/../includes/nav.php';
                 </div>
                 <button class="btn btn-primary w-100" type="submit">ログイン</button>
             </form>
+            <p class="mt-3 mb-0 text-center"><a href="forgot-password.php">パスワードをお忘れの方</a></p>
             <p class="mt-3 mb-0 text-center"><a href="register.php">新規登録はこちら</a></p>
         </div>
     </div>

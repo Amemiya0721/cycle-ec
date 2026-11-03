@@ -34,8 +34,12 @@ $hasShipment = !empty($order['tracking_number']);
 $trackingUrl = $hasShipment
     ? OrderMailService::trackingUrl((string) $order['shipping_carrier'], (string) $order['tracking_number'])
     : null;
-$canShip = $order['status'] === Order::STATUS_ORDERED;
+$canShip = $order['status'] === Order::STATUS_ORDERED
+    && $order['payment_status'] === Order::PAYMENT_STATUS_PAID;
 $canResend = $order['status'] === Order::STATUS_SHIPPED && $hasShipment;
+if (empty($_SESSION['order_status_csrf'])) {
+    $_SESSION['order_status_csrf'] = bin2hex(random_bytes(32));
+}
 
 $adminTitle = '注文詳細';
 $activeMenu = 'orders';
@@ -70,6 +74,35 @@ require __DIR__ . '/../includes/header.php';
             <p class="mb-0">TEL: <?= h((string) $order['shipping_phone_number']) ?></p>
         </div>
     </div>
+</div>
+
+<div class="admin-card bg-white p-3 mb-4">
+    <h2 class="admin-section-title">お支払い</h2>
+    <p class="mb-1">方法: <?= ($order['payment_method'] ?? '') === Order::PAYMENT_METHOD_BANK_TRANSFER
+        ? '銀行振込'
+        : h((string) ($order['payment_method'] ?? '')) ?></p>
+    <p class="mb-1">状態:
+        <?php if ($order['payment_status'] === Order::PAYMENT_STATUS_PAID): ?>
+            <span class="badge text-bg-success">入金済み</span>
+            （<?= h((string) ($order['paid_at'] ?? '')) ?>）
+        <?php elseif ($order['payment_status'] === Order::PAYMENT_STATUS_UNPAID): ?>
+            <span class="badge text-bg-warning">未入金</span>
+        <?php else: ?>
+            <span class="badge text-bg-secondary">入金取消</span>
+        <?php endif; ?>
+    </p>
+    <?php if ($order['payment_due_at'] !== null): ?><p>支払期限: <?= h((string) $order['payment_due_at']) ?></p><?php endif; ?>
+    <?php if (
+        $order['status'] === Order::STATUS_ORDERED
+        && $order['payment_status'] === Order::PAYMENT_STATUS_UNPAID
+    ): ?>
+        <form method="post" action="index.php" onsubmit="return confirm('入金を確認済みにしますか？');">
+            <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
+            <input type="hidden" name="operation" value="mark_paid">
+            <input type="hidden" name="order_id" value="<?= (int) $order['order_id'] ?>">
+            <button class="btn btn-sm btn-success" type="submit">入金確認</button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <?php if ($hasShipment || $canShip): ?>
@@ -125,12 +158,20 @@ require __DIR__ . '/../includes/header.php';
                     <tr>
                         <td><?= (int) $item['product_id'] ?></td>
                         <td><?= h((string) ($item['name'] ?? '（商品情報なし）')) ?></td>
-                        <td class="text-end"><?= number_format((float) $item['price']) ?>円</td>
+                        <td class="text-end"><?= number_format((float) $item['price'], 2) ?>円</td>
                     </tr>
                 <?php endforeach; ?>
+                <tr>
+                    <td colspan="2" class="fw-semibold">商品小計</td>
+                    <td class="text-end"><?= number_format((float) ($order['subtotal'] ?? $order['total_price']), 2) ?>円</td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="fw-semibold">送料<?= !empty($order['shipping_size']) ? '（' . h((string) $order['shipping_size']) . '）' : '' ?></td>
+                    <td class="text-end"><?= number_format((float) ($order['shipping_fee'] ?? 0), 2) ?>円</td>
+                </tr>
                 <tr class="table-light">
                     <td colspan="2" class="fw-semibold">合計（税込）</td>
-                    <td class="text-end fw-semibold"><?= number_format((float) $order['total_price']) ?>円</td>
+                    <td class="text-end fw-semibold"><?= number_format((float) $order['total_price'], 2) ?>円</td>
                 </tr>
             </tbody>
         </table>

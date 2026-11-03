@@ -84,6 +84,7 @@ try {
 
         <?php if ($isLoggedIn): ?>
           <li class="text-muted"><?= htmlspecialchars($loggedInName, ENT_QUOTES, 'UTF-8') ?> さん</li>
+          <li><a href="<?= $baseUrl ?>pages/mypage-address.php">お届け先住所</a></li>
           <li>
             <a href="<?= $baseUrl ?>pages/logout.php" id="logout-link">ログアウト</a>
           </li>
@@ -121,10 +122,10 @@ try {
           </a>
         </li>
 
-        <?php foreach ($categories as $category): ?>
+        <?php foreach ($categories as $navCategory): ?>
           <li>
-            <a href="<?= htmlspecialchars(Category::productsUrl((int) $category['category_id'], $baseUrl), ENT_QUOTES, 'UTF-8') ?>" data-cat="<?= (int) $category['category_id'] ?>">
-              <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
+            <a href="<?= htmlspecialchars(Category::productsUrl((int) $navCategory['category_id'], $baseUrl), ENT_QUOTES, 'UTF-8') ?>" data-cat="<?= (int) $navCategory['category_id'] ?>">
+              <?= htmlspecialchars((string) $navCategory['name'], ENT_QUOTES, 'UTF-8') ?>
             </a>
           </li>
         <?php endforeach; ?>
@@ -193,6 +194,7 @@ try {
 
       <?php if ($isLoggedIn): ?>
         <li class="text-muted"><?= htmlspecialchars($loggedInName, ENT_QUOTES, 'UTF-8') ?> さん</li>
+        <li><a href="<?= $baseUrl ?>pages/mypage-address.php">お届け先住所</a></li>
         <li><a href="<?= $baseUrl ?>pages/logout.php" id="mobile-logout-link">ログアウト</a></li>
       <?php else: ?>
         <li><a href="<?= $baseUrl ?>pages/register.php" id="mobile-register-link">新規登録</a></li>
@@ -229,10 +231,10 @@ try {
         </a>
       </li>
 
-      <?php foreach ($categories as $category): ?>
+      <?php foreach ($categories as $navCategory): ?>
         <li>
-          <a href="<?= htmlspecialchars(Category::productsUrl((int) $category['category_id'], $baseUrl), ENT_QUOTES, 'UTF-8') ?>" data-cat="<?= (int) $category['category_id'] ?>">
-            <?= htmlspecialchars((string) $category['name'], ENT_QUOTES, 'UTF-8') ?>
+          <a href="<?= htmlspecialchars(Category::productsUrl((int) $navCategory['category_id'], $baseUrl), ENT_QUOTES, 'UTF-8') ?>" data-cat="<?= (int) $navCategory['category_id'] ?>">
+            <?= htmlspecialchars((string) $navCategory['name'], ENT_QUOTES, 'UTF-8') ?>
           </a>
         </li>
       <?php endforeach; ?>

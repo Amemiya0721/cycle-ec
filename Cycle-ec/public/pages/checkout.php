@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../src/Auth.php';
 require_once __DIR__ . '/../../src/Order.php';
 require_once __DIR__ . '/../../src/OrderMailService.php';
 require_once __DIR__ . '/../../src/Product.php';
+require_once __DIR__ . '/../../src/UserAddress.php';
 
 function h(?string $value): string
 {
@@ -17,6 +18,13 @@ function h(?string $value): string
 }
 
 $errors = [];
+$bankTransferConfigured = false;
+try {
+    $bankTransferConfigured = OrderMailService::isBankTransferConfigured();
+} catch (PDOException $exception) {
+    error_log('Checkout bank transfer settings fetch failed: ' . $exception->getMessage());
+    $errors[] = 'お支払い情報を取得できません。時間をおいて再度お試しください。';
+}
 
 $shipping = [
     'postal_code' => '',
@@ -110,6 +118,19 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
+$savedAddress = UserAddress::findByUserId((int) $_SESSION['user_id']);
+if ($savedAddress !== null) {
+    $shipping = [
+        'postal_code' => UserAddress::formatPostalCode((string) $savedAddress['postal_code']),
+        'prefecture' => (string) $savedAddress['prefecture'],
+        'city' => (string) $savedAddress['city'],
+        'address_line' => (string) $savedAddress['address_line'],
+        'building' => (string) ($savedAddress['building'] ?? ''),
+        'recipient_name' => (string) $savedAddress['recipient_name'],
+        'phone_number' => (string) $savedAddress['phone_number'],
+    ];
+}
+
 /*
 |--------------------------------------------------------------------------
 | 4. 購入対象の商品を決定
@@ -145,7 +166,8 @@ if ($checkoutMode === 'buy_now') {
 */
 
 $checkoutItems = [];
-$subtotal = 0;
+$subtotalCents = 0;
+$shippingQuote = null;
 $invalidProducts = false;
 
 foreach ($productIds as $productId) {
@@ -157,11 +179,29 @@ foreach ($productIds as $productId) {
     }
 
     $checkoutItems[] = $product;
-    $subtotal += (int) $product['price'];
+    $price = (string) $product['price'];
+    if (!preg_match('/^\d{1,8}\.\d{2}$/D', $price)) {
+        $invalidProducts = true;
+        continue;
+    }
+    $subtotalCents += (int) str_replace('.', '', $price);
 }
+$currentSubtotal = sprintf('%d.%02d', intdiv($subtotalCents, 100), $subtotalCents % 100);
 
 if ($invalidProducts || !$checkoutItems) {
     $errors[] = '購入できない商品が含まれています。商品を確認してください。';
+} else {
+    try {
+        $shippingQuote = ShippingRate::quoteForProducts(
+            Database::getConnection(),
+            $checkoutItems
+        );
+    } catch (ShippingRateException $exception) {
+        $errors[] = $exception->getMessage();
+    } catch (PDOException $exception) {
+        error_log('Checkout shipping quote failed: ' . $exception->getMessage());
+        $errors[] = '送料を取得できませんでした。時間をおいて再度お試しください。';
+    }
 }
 
 /*
@@ -171,6 +211,10 @@ if ($invalidProducts || !$checkoutItems) {
 */
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$bankTransferConfigured) {
+        $errors[] = '銀行振込先口座が未設定のため、現在ご注文を受け付けていません。';
+    }
+
     $csrfToken = $_POST['csrf_token'] ?? null;
     $checkoutToken = $_POST['checkout_token'] ?? null;
 
@@ -191,25 +235,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'この注文フォームは送信済みです。画面を再読み込みしてください。';
     }
 
-    foreach ($shipping as $field => $value) {
-        $shipping[$field] = trim((string) ($_POST[$field] ?? ''));
+    $expectedRateId = filter_var(
+        $_POST['expected_shipping_rate_id'] ?? null,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
+    $expectedFee = $_POST['expected_shipping_fee'] ?? null;
+    $expectedSize = $_POST['expected_shipping_size'] ?? null;
+    $expectedSubtotal = $_POST['expected_subtotal'] ?? null;
+    if (
+        !is_string($expectedSubtotal)
+        || $expectedSubtotal !== $currentSubtotal
+        || (
+            $shippingQuote !== null
+            && (
+                $expectedRateId !== (int) $shippingQuote['shipping_rate_id']
+                || !is_string($expectedFee)
+                || $expectedFee !== (string) $shippingQuote['shipping_fee']
+                || !is_string($expectedSize)
+                || $expectedSize !== (string) $shippingQuote['shipping_size']
+            )
+        )
+    ) {
+        $errors[] = '商品価格または送料が更新されたため、ご注文内容を確認してから再度注文してください。';
     }
 
-    $requiredFields = [
-        'postal_code',
-        'prefecture',
-        'city',
-        'address_line',
-        'recipient_name',
-        'phone_number'
+    $normalizedAddress = UserAddress::normalize([
+        'recipient_name' => $_POST['recipient_name'] ?? '',
+        'postal_code' => $_POST['postal_code'] ?? '',
+        'prefecture' => $_POST['prefecture'] ?? '',
+        'city' => $_POST['city'] ?? '',
+        'address_line' => $_POST['address_line'] ?? '',
+        'building' => $_POST['building'] ?? '',
+        'phone_number' => $_POST['phone_number'] ?? '',
+    ]);
+    $addressErrors = UserAddress::validate($normalizedAddress);
+    if ($addressErrors !== []) {
+        $errors = array_merge($errors, array_values($addressErrors));
+    }
+    $shipping = [
+        'postal_code' => $normalizedAddress['postal_code'],
+        'prefecture' => $normalizedAddress['prefecture'],
+        'city' => $normalizedAddress['city'],
+        'address_line' => $normalizedAddress['address_line'],
+        'building' => $normalizedAddress['building'],
+        'recipient_name' => $normalizedAddress['recipient_name'],
+        'phone_number' => $normalizedAddress['phone_number'],
     ];
-
-    foreach ($requiredFields as $field) {
-        if ($shipping[$field] === '') {
-            $errors[] = '必須項目を入力してください。';
-            break;
-        }
-    }
 
     if (!$productIds) {
         $errors[] = '購入する商品がありません。';
@@ -222,7 +294,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $orderId = Order::create(
                 (int) $_SESSION['user_id'],
                 $productIds,
-                $shipping
+                $shipping,
+                [
+                    'subtotal' => $expectedSubtotal,
+                    'shipping_rate_id' => is_int($expectedRateId) ? $expectedRateId : 0,
+                    'shipping_fee' => $expectedFee,
+                    'shipping_size' => $expectedSize,
+                ]
             );
 
             if ($checkoutMode === 'cart') {
@@ -346,7 +424,7 @@ require_once __DIR__ . '/../includes/nav.php';
                         </div>
 
                         <div class="fw-bold fs-5 mt-2">
-                            ¥<?= number_format((float) $item['price']) ?>
+                            ¥<?= number_format((float) $item['price'], 2) ?>
                         </div>
 
                     </div>
@@ -360,16 +438,34 @@ require_once __DIR__ . '/../includes/nav.php';
             <div class="d-flex justify-content-between">
                 <strong>商品小計</strong>
                 <strong class="fs-5">
-                    ¥<?= number_format($subtotal) ?>
+                    ¥<?= number_format($subtotalCents / 100, 2) ?>
                 </strong>
             </div>
-
-            <p class="text-muted small mt-2 mb-0">
-                ※送料は別途発生する場合があります。
-            </p>
+            <?php if ($shippingQuote !== null): ?>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>送料（<?= h($shippingQuote['shipping_size']) ?>）</span>
+                    <strong>¥<?= number_format((float) $shippingQuote['shipping_fee'], 2) ?></strong>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <strong>ご請求合計</strong>
+                    <strong class="fs-5">¥<?= number_format(($subtotalCents / 100) + (float) $shippingQuote['shipping_fee'], 2) ?></strong>
+                </div>
+            <?php endif; ?>
 
         </div>
 
+    </section>
+
+    <section class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">お支払い方法：銀行振込</h2>
+            <?php if ($bankTransferConfigured): ?>
+                <p class="mb-0">振込先は注文確認メールに記載します。お支払い期限は注文確定から3日間です。</p>
+            <?php else: ?>
+                <p class="alert alert-warning mb-0">銀行振込先口座が未設定のため、注文を受け付けていません。</p>
+            <?php endif; ?>
+        </div>
     </section>
 
     <!-- お届け先情報 -->
@@ -387,6 +483,12 @@ require_once __DIR__ . '/../includes/nav.php';
             name="checkout_token"
             value="<?= h((string) $_SESSION['checkout_token']) ?>">
 
+        <?php if ($shippingQuote !== null): ?>
+            <input type="hidden" name="expected_subtotal" value="<?= h($currentSubtotal) ?>">
+            <input type="hidden" name="expected_shipping_rate_id" value="<?= (int) $shippingQuote['shipping_rate_id'] ?>">
+            <input type="hidden" name="expected_shipping_fee" value="<?= h((string) $shippingQuote['shipping_fee']) ?>">
+            <input type="hidden" name="expected_shipping_size" value="<?= h((string) $shippingQuote['shipping_size']) ?>">
+        <?php endif; ?>
 
         <div class="mb-3">
             <label for="postal_code" class="form-label">郵便番号</label>
@@ -400,6 +502,7 @@ require_once __DIR__ . '/../includes/nav.php';
                     placeholder="123-4567"
                     inputmode="numeric"
                     maxlength="8"
+                    value="<?= h($shipping['postal_code']) ?>"
                     required>
                 <button
                     type="button"
@@ -416,21 +519,25 @@ require_once __DIR__ . '/../includes/nav.php';
 
         <div class="mb-3">
             <label for="prefecture" class="form-label">都道府県</label>
-            <input type="text" class="form-control"
-                id="prefecture" name="prefecture" required>
+            <select class="form-select" id="prefecture" name="prefecture" required>
+                <option value="">選択してください</option>
+                <?php foreach (UserAddress::PREFECTURES as $prefecture): ?>
+                    <option value="<?= h($prefecture) ?>" <?= $shipping['prefecture'] === $prefecture ? 'selected' : '' ?>><?= h($prefecture) ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
         <div class="mb-3">
             <label for="city" class="form-label">市区町村</label>
             <input type="text" class="form-control"
-                id="city" name="city" required>
+                id="city" name="city" maxlength="50" value="<?= h($shipping['city']) ?>" required>
         </div>
 
         <div class="mb-3">
             <label for="address_line" class="form-label">町名・番地</label>
             <input type="text" class="form-control"
                 id="address_line" name="address_line"
-                placeholder="町名・番地を入力" required>
+                placeholder="町名・番地を入力" maxlength="100" value="<?= h($shipping['address_line']) ?>" required>
         </div>
 
 
@@ -439,6 +546,7 @@ require_once __DIR__ . '/../includes/nav.php';
             <input
                 class="form-control"
                 name="building"
+                maxlength="100"
                 value="<?= h($shipping['building']) ?>">
         </div>
 
@@ -447,6 +555,7 @@ require_once __DIR__ . '/../includes/nav.php';
             <input
                 class="form-control"
                 name="recipient_name"
+                maxlength="50"
                 value="<?= h($shipping['recipient_name']) ?>"
                 required>
         </div>
@@ -454,8 +563,10 @@ require_once __DIR__ . '/../includes/nav.php';
         <div class="mb-3">
             <label class="form-label">電話番号</label>
             <input
+                type="tel"
                 class="form-control"
                 name="phone_number"
+                maxlength="20"
                 value="<?= h($shipping['phone_number']) ?>"
                 required>
         </div>
@@ -463,7 +574,7 @@ require_once __DIR__ . '/../includes/nav.php';
         <button
             class="btn btn-primary"
             type="submit"
-            <?= $errors && ($invalidProducts || !$checkoutItems)
+            <?= $invalidProducts || !$checkoutItems || $shippingQuote === null || !$bankTransferConfigured
                 ? 'disabled'
                 : '' ?>>
             注文を確定する

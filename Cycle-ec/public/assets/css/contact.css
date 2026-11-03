@@ -194,6 +194,15 @@
     line-height: 1.7;
 }
 
+.contact-container .success-box {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid #a3cfbb;
+    border-radius: 8px;
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
 .contact-container .error-box ul {
     padding-left: 20px;
     margin: 10px 0 0;

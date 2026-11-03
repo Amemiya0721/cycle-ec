@@ -50,7 +50,7 @@ return [
     'site' => [
         'name' => getenv('SITE_NAME') ?: 'OVERHAUL',
         'url' => getenv('SITE_URL') ?: '',
-        'contact_email' => getenv('CONTACT_EMAIL') ?: '',
+        'contact_email' => getenv('CONTACT_EMAIL') ?: (getenv('SMTP_USERNAME') ?: ''),
     ],
 
     /*
@@ -73,7 +73,7 @@ return [
      * -------------------------------------------------------
      */
     'products' => [
-        'per_page' => 12,
+        'per_page' => 10,
     ],
 
     'mail' => [

@@ -5,12 +5,24 @@ declare(strict_types=1);
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Order.php';
 require_once __DIR__ . '/Mailer.php';
+require_once __DIR__ . '/BankTransferSettings.php';
 
 /**
  * 注文関連メールの送信と、送信結果の記録（order_mail_logs）。
  */
 final class OrderMailService
 {
+    /** 振込案内に必要な口座情報を取得する。 */
+    public static function bankTransferSettings(): array
+    {
+        return BankTransferSettings::get();
+    }
+
+    public static function isBankTransferConfigured(): bool
+    {
+        return BankTransferSettings::isConfigured(self::bankTransferSettings());
+    }
+
     /** 配送会社ごとの追跡URL。「その他」はURLなし。 */
     public static function trackingUrl(string $carrier, string $trackingNumber): ?string
     {
@@ -41,49 +53,62 @@ final class OrderMailService
                 return false;
             }
 
+            $bankTransfer = self::bankTransferSettings();
             $to = trim((string) ($order['buyer_email'] ?? ''));
-            if (preg_match('/[\r\n]/', $to) === 1 || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
-                self::log($orderId, $to, 'failed', '宛先メールアドレスが不正です。', 'confirmation');
-                return false;
-            }
-
             $orderNumber = (string) ($order['order_number'] ?? '');
-            $subject = '【OVERHAUL】ご注文ありがとうございます（注文番号：' . $orderNumber . '）';
-            $lines = [
-                'OVERHAUL',
-                '',
-                (string) ($order['buyer_name'] ?? '') . ' 様',
-                '',
-                'ご注文ありがとうございます。以下の内容でご注文を承りました。',
-                '',
-                '■ 注文番号：' . $orderNumber,
-                '',
-                '■ ご注文内容',
-            ];
-            foreach (($order['items'] ?? []) as $item) {
-                $lines[] = '・' . (string) ($item['name'] ?? '（商品情報なし）')
-                    . '　' . number_format((float) ($item['price'] ?? 0)) . '円';
-            }
-            $lines[] = '合計（税込）：' . number_format((float) ($order['total_price'] ?? 0)) . '円';
-            $lines[] = '';
-            $lines[] = '■ お届け先';
-            $lines[] = (string) ($order['shipping_recipient_name'] ?? '') . ' 様';
-            $lines[] = '〒' . (string) ($order['shipping_postal_code'] ?? '');
-            $lines[] = (string) ($order['shipping_prefecture'] ?? '')
-                . (string) ($order['shipping_city'] ?? '')
-                . (string) ($order['shipping_address_line'] ?? '')
-                . ' ' . (string) ($order['shipping_building'] ?? '');
-            $lines[] = '';
-            $lines[] = '発送が完了しましたら、改めてメールでご案内します。';
-            $lines[] = 'このメールは送信専用です。';
-
-            if (!Mailer::sendTextMail([$to], $subject, implode("\n", $lines))) {
-                self::log($orderId, $to, 'failed', 'SMTP送信に失敗しました。サーバーのエラーログを確認してください。', 'confirmation');
-                return false;
+            $customerSent = false;
+            if (!BankTransferSettings::isConfigured($bankTransfer)) {
+                self::log($orderId, $to, 'failed', '銀行振込先口座が未設定です。', 'confirmation');
+            } elseif (
+                preg_match('/[\r\n]/', $to) === 1
+                || filter_var($to, FILTER_VALIDATE_EMAIL) === false
+            ) {
+                self::log($orderId, $to, 'failed', '宛先メールアドレスが不正です。', 'confirmation');
+            } else {
+                $customerSent = Mailer::sendTemplateMail(
+                    $to,
+                    '【OVERHAUL】ご注文ありがとうございます（注文番号：' . $orderNumber . '）',
+                    'order_confirmation.html.php',
+                    'order_confirmation.txt.php',
+                    ['order' => $order, 'bankTransfer' => $bankTransfer]
+                );
+                self::log(
+                    $orderId,
+                    $to,
+                    $customerSent ? 'sent' : 'failed',
+                    $customerSent ? null : '注文確認メールの送信に失敗しました。',
+                    'confirmation'
+                );
             }
 
-            self::log($orderId, $to, 'sent', null, 'confirmation');
-            return true;
+            $config = require __DIR__ . '/../config/config.php';
+            $adminRecipient = trim((string) ($config['site']['contact_email'] ?? ''));
+            $adminSent = false;
+            if (
+                $adminRecipient === ''
+                || preg_match('/[\r\n]/', $adminRecipient) === 1
+                || filter_var($adminRecipient, FILTER_VALIDATE_EMAIL) === false
+            ) {
+                error_log('Admin order notification failed: CONTACT_EMAIL is missing or invalid. order_id=' . $orderId);
+                self::log($orderId, $adminRecipient, 'failed', '管理者通知先（CONTACT_EMAIL）が未設定か不正です。', 'admin_notification');
+            } else {
+                $adminSent = Mailer::sendTemplateMail(
+                    $adminRecipient,
+                    '【OVERHAUL】新しい注文を受け付けました（注文番号：' . $orderNumber . '）',
+                    'order_admin_notification.html.php',
+                    'order_admin_notification.txt.php',
+                    ['order' => $order]
+                );
+                self::log(
+                    $orderId,
+                    $adminRecipient,
+                    $adminSent ? 'sent' : 'failed',
+                    $adminSent ? null : '管理者への注文通知メールの送信に失敗しました。',
+                    'admin_notification'
+                );
+            }
+
+            return $customerSent && $adminSent;
         } catch (Throwable $exception) {
             error_log('Order confirmation mail unexpected failure. order_id=' . $orderId . ' error=' . $exception->getMessage());
             return false;
@@ -154,7 +179,7 @@ final class OrderMailService
     }
 
     /**
-     * @param string $mailType shipment または confirmation
+     * @param string $mailType shipment、confirmation または admin_notification
      */
     private static function log(int $orderId, string $to, string $status, ?string $error, string $mailType = 'shipment'): void
     {

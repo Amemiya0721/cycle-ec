@@ -9,6 +9,7 @@
 require_once __DIR__ . '/../../../src/Database.php';
 require_once __DIR__ . '/../../../src/Product.php';
 require_once __DIR__ . '/../../../src/Category.php';
+require_once __DIR__ . '/../../../src/ShippingRate.php';
 require_once __DIR__ . '/../includes/auth.php';
 $productConditions = require __DIR__ . '/../../../config/product_conditions.php';
 
@@ -16,6 +17,10 @@ try {
     $pdo = Database::getConnection();
 } catch (PDOException $e) {
     exit('データベースへの接続に失敗しました。');
+}
+
+if ($shippingSize === '' || !ShippingRate::isActiveSize($shippingSize)) {
+    $errors[] = '有効な配送サイズを選択してください。';
 }
 
 $errors = [];
@@ -27,6 +32,8 @@ $description      = trim($_POST['description'] ?? '');
 $price            = $_POST['price'] ?? '';
 $taxRate          = $_POST['tax_rate'] ?? '10';
 $status            = $_POST['status'] ?? '';
+$status            = is_string($status) ? $status : '';
+$shippingSize      = is_string($_POST['shipping_size'] ?? null) ? trim($_POST['shipping_size']) : '';
 $productCondition = $_POST['product_condition'] ?? '';
 $stockQuantity    = $_POST['stock_quantity'] ?? '0';
 $staffComment     = trim($_POST['staff_comment'] ?? '');
@@ -34,6 +41,7 @@ $specsRaw         = $_POST['specs_raw'] ?? '';
 $accessoriesRaw   = $_POST['accessories_raw'] ?? '';
 $isRecommended    = isset($_POST['is_recommended']);
 $categories = Category::all();
+$shippingRates = ShippingRate::active();
 
 
 // ========================================
@@ -68,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = '税率を正しく入力してください。';
     }
 
-    if ($status === '') {
-        $errors[] = '販売ステータスを選択してください。';
+    if (!Product::isValidStatus((string) $status)) {
+        $errors[] = '販売ステータスを正しく選択してください。';
     }
 
     if ($productCondition === '') {
@@ -139,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'description' => $description,
                 'price' => $price,
                 'tax_rate' => $taxRate,
+                'shipping_size' => $shippingSize,
                 'status' => $status,
                 'product_condition' => $productCondition,
                 'stock_quantity' => (int) $stockQuantity,
@@ -323,14 +332,26 @@ require __DIR__ . '/../includes/header.php';
                 </div>
 
                 <!-- ステータス・商品状態 -->
+                <div class="mb-3">
+                    <label for="shipping_size" class="form-label">配送サイズ <span class="text-danger">*</span></label>
+                    <select name="shipping_size" id="shipping_size" class="form-select" required>
+                        <option value="">選択してください</option>
+                        <?php foreach ($shippingRates as $shippingRate): ?>
+                            <option value="<?= h((string) $shippingRate['shipping_size']) ?>" <?= $shippingSize === (string) $shippingRate['shipping_size'] ? 'selected' : '' ?>>
+                                <?= h((string) $shippingRate['shipping_size']) ?>（送料 <?= number_format((float) $shippingRate['shipping_fee'], 2) ?>円）
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if ($shippingRates === []): ?><div class="form-text text-danger">送料管理から有効な配送サイズを登録してください。</div><?php endif; ?>
+                </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="status" class="form-label">販売ステータス <span class="text-danger">*</span></label>
                         <select name="status" id="status" class="form-select" required>
                             <option value="">選択してください</option>
-                            <option value="販売中" <?= ($status ?? '') === '販売中' ? 'selected' : '' ?>>販売中</option>
-                            <option value="売切れ" <?= ($status ?? '') === '売切れ' ? 'selected' : '' ?>>売切れ</option>
-                            <option value="下書き" <?= ($status ?? '') === '下書き' ? 'selected' : '' ?>>下書き</option>
+                            <?php foreach (Product::statusLabels() as $statusValue => $statusLabel): ?>
+                                <option value="<?= h($statusValue) ?>" <?= (string) $status === $statusValue ? 'selected' : '' ?>><?= h($statusLabel) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -351,7 +372,7 @@ require __DIR__ . '/../includes/header.php';
                     <label for="stock_quantity" class="form-label">在庫数 <span class="text-danger">*</span></label>
                     <input type="number" name="stock_quantity" id="stock_quantity" class="form-control" min="0" step="1"
                         value="<?= h((string) $stockQuantity) ?>" required style="max-width: 160px">
-                    <div class="form-text">0にすると商品詳細ページで「売り切れ」として表示されます。</div>
+                    <div class="form-text">初期在庫数です。登録後、仕入管理から初期在庫原価を設定してください。0にすると売り切れとして表示されます。</div>
                 </div>
 
                 <!-- スペック -->

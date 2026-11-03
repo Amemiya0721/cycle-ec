@@ -50,17 +50,48 @@ require_once __DIR__ . '/../includes/nav.php';
                 <p class="mb-0">注文番号: <?= h((string) $order['order_number']) ?></p>
             </div>
 
+            <?php if (
+                ($order['status'] ?? null) === Order::STATUS_CANCELED
+                || ($order['payment_status'] ?? null) === Order::PAYMENT_STATUS_CANCELED
+            ): ?>
+                <div class="alert alert-secondary">この注文はキャンセルされています。</div>
+            <?php elseif (
+                ($order['status'] ?? null) === Order::STATUS_ORDERED
+                && ($order['payment_status'] ?? null) === Order::PAYMENT_STATUS_UNPAID
+            ): ?>
+                <section class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h5">銀行振込</h2>
+                        <p>振込先は注文確認メールをご確認ください。</p>
+                        <p>お支払い期限: <strong><?= h((string) $order['payment_due_at']) ?></strong></p>
+                        <p class="mb-0">入金確認後に発送します。注文番号を振込名義に添えてお振込みください。</p>
+                    </div>
+                </section>
+            <?php elseif (($order['payment_status'] ?? null) === Order::PAYMENT_STATUS_PAID): ?>
+                <div class="alert alert-success">入金確認済みです。</div>
+            <?php elseif (($order['payment_status'] ?? null) === Order::PAYMENT_STATUS_UNPAID): ?>
+                <div class="alert alert-warning">入金状況を確認中です。ご不明な点は店舗へお問い合わせください。</div>
+            <?php endif; ?>
+
             <h2 class="h5 mt-4 mb-3">ご注文内容</h2>
             <ul class="list-group mb-4">
                 <?php foreach ($order['items'] as $item): ?>
                     <li class="list-group-item d-flex justify-content-between">
                         <span><?= h((string) ($item['name'] ?? '（商品情報なし）')) ?></span>
-                        <strong><?= number_format((float) $item['price']) ?>円</strong>
+                        <strong><?= number_format((float) $item['price'], 2) ?>円</strong>
                     </li>
                 <?php endforeach; ?>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>商品小計</span>
+                    <strong><?= number_format((float) ($order['subtotal'] ?? $order['total_price']), 2) ?>円</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>送料<?= !empty($order['shipping_size']) ? '（' . h((string) $order['shipping_size']) . '）' : '' ?></span>
+                    <strong><?= number_format((float) ($order['shipping_fee'] ?? 0), 2) ?>円</strong>
+                </li>
                 <li class="list-group-item d-flex justify-content-between bg-light">
                     <span>合計（税込）</span>
-                    <strong><?= number_format((float) $order['total_price']) ?>円</strong>
+                    <strong><?= number_format((float) $order['total_price'], 2) ?>円</strong>
                 </li>
             </ul>
 

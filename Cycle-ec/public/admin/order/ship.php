@@ -117,7 +117,10 @@ if (!is_array($actionMessage)) {
 }
 
 $csrf = (string) $_SESSION['order_ship_csrf'];
-$isOrdered = $order['status'] === Order::STATUS_ORDERED;
+$isOrdered = $order['status'] === Order::STATUS_ORDERED
+    && $order['payment_status'] === Order::PAYMENT_STATUS_PAID;
+$isUnpaidOrder = $order['status'] === Order::STATUS_ORDERED
+    && $order['payment_status'] === Order::PAYMENT_STATUS_UNPAID;
 $isShippedWithTracking = $order['status'] === Order::STATUS_SHIPPED && !empty($order['tracking_number']);
 
 $adminTitle = '発送処理';
@@ -134,6 +137,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 
 <?php if ($actionMessage !== null): ?><div class="alert alert-<?= h((string) $actionMessage['type']) ?>" role="status"><?= h((string) $actionMessage['text']) ?></div><?php endif; ?>
+<?php if ($isUnpaidOrder): ?><div class="alert alert-warning">未入金のため発送できません。先に注文一覧または注文詳細から入金確認を行ってください。</div><?php endif; ?>
 <?php if ($errors !== []): ?>
     <div class="alert alert-danger" role="alert">
         <ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= h($e) ?></li><?php endforeach; ?></ul>

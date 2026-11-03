@@ -7,7 +7,15 @@ require_once __DIR__ . '/../../src/Category.php';
 require_once __DIR__ . '/../../src/Order.php';
 require_once __DIR__ . '/includes/auth.php';
 
-$summary = ['products' => 0, 'categories' => 0, 'orders' => 0];
+$summary = [
+	'products' => 0,
+	'categories' => 0,
+	'orders' => 0,
+	'pending_orders' => 0,
+	'shipped_orders' => 0,
+	'cancelled_orders' => 0,
+	'active_order_amount' => 0,
+];
 $recentProducts = [];
 try {
 	$productResult = Product::search(['page' => 1, 'sort' => 'newest']);
@@ -20,17 +28,8 @@ try {
 	$summary['shipped_orders'] = $orderSummary['shipped_orders'];
 	$summary['cancelled_orders'] = $orderSummary['cancelled_orders'];
 	$summary['active_order_amount'] = $orderSummary['active_order_amount'];
-
-	$summary = [
-		'products' => 0,
-		'categories' => 0,
-		'orders' => 0,
-		'pending_orders' => 0,
-		'shipped_orders' => 0,
-		'cancelled_orders' => 0,
-		'active_order_amount' => 0,
-	];
 } catch (PDOException $exception) {
+	error_log('Admin dashboard data fetch failed: ' . $exception->getMessage());
 	$errorMessage = 'ダッシュボード情報の取得に失敗しました。';
 }
 
@@ -46,8 +45,8 @@ require __DIR__ . '/includes/header.php';
 ?>
 <div class="admin-page-header">
 	<div>
-		<h1>ダッシュボード（開発中）</h1>
-		<p class="text-muted mb-0">今日の運用状況を確認できます。</p>
+		<h1>ダッシュボード</h1>
+		<p class="text-muted mb-0">商品・注文の現在の運用状況を確認できます。</p>
 	</div>
 	<a class="btn btn-primary" href="products/product-create.php">＋ 商品を追加</a>
 </div>

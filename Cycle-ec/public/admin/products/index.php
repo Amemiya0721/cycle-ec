@@ -57,11 +57,11 @@ require __DIR__ . '/../includes/header.php';
     <form class="row g-2 mb-3" method="get">
         <div class="col-md-5"><input class="form-control" name="keyword" value="<?= h($keyword) ?>" placeholder="商品名・カテゴリで検索"></div>
         <div class="col-md-3"><select class="form-select" name="category"><option value="">すべてのカテゴリ</option><?php foreach ($categories as $categoryItem): ?><option value="<?= (int) $categoryItem['category_id'] ?>" <?= $category === (string) $categoryItem['category_id'] ? 'selected' : '' ?>><?= h((string) $categoryItem['name']) ?></option><?php endforeach; ?></select></div>
-        <div class="col-md-2"><select class="form-select" name="status"><option value="">すべての状態</option><option value="販売中" <?= $status === '販売中' ? 'selected' : '' ?>>販売中</option><option value="下書き" <?= $status === '下書き' ? 'selected' : '' ?>>下書き</option><option value="売切れ" <?= $status === '売切れ' ? 'selected' : '' ?>>売切れ</option></select></div>
+        <div class="col-md-2"><select class="form-select" name="status"><option value="">すべての状態</option><?php foreach (Product::statusLabels() as $statusValue => $statusLabel): ?><option value="<?= h($statusValue) ?>" <?= $status === $statusValue ? 'selected' : '' ?>><?= h($statusLabel) ?></option><?php endforeach; ?></select></div>
         <div class="col-auto"><button class="btn btn-outline-secondary" type="submit">検索</button></div>
     </form>
     <div class="admin-card bg-white"><div class="table-responsive"><table class="table admin-table table-hover align-middle mb-0">
-        <thead class="table-light"><tr><th>ID</th><th>商品名</th><th>メーカー</th><th>カテゴリ</th><th>価格</th><th>状態</th><th></th></tr></thead>
+        <thead class="table-light"><tr><th>ID</th><th>商品名</th><th>メーカー</th><th>カテゴリ</th><th>配送サイズ</th><th>価格</th><th>状態</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($result['items'] as $item): ?>
             <tr>
@@ -69,12 +69,13 @@ require __DIR__ . '/../includes/header.php';
                 <td><?= h((string) $item['name']) ?></td>
                 <td><?= h((string) ($item['manufacturer'] ?? '')) ?></td>
                 <td><?= h((string) $item['category_name']) ?></td>
+                <td><?= h((string) $item['shipping_size']) ?></td>
                 <td><?= number_format((float) $item['price']) ?>円</td>
-                <td><?= h((string) $item['status']) ?></td>
+                <td><?= h(Product::statusLabel((string) $item['status'])) ?></td>
                 <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="product-images.php?id=<?= (int) $item['product_id'] ?>">画像</a> <a class="btn btn-sm btn-outline-secondary" href="product-price-history.php?id=<?= (int) $item['product_id'] ?>">価格履歴</a> <a class="btn btn-sm btn-outline-primary" href="product-edit.php?id=<?= (int) $item['product_id'] ?>">編集</a></td>
             </tr>
         <?php endforeach; ?>
-        <?php if (empty($result['items'])): ?><tr><td colspan="7" class="text-center py-4">商品がありません。</td></tr><?php endif; ?>
+        <?php if (empty($result['items'])): ?><tr><td colspan="8" class="text-center py-4">商品がありません。</td></tr><?php endif; ?>
         </tbody>
     </table></div></div>
     <?php if ($result['total_pages'] > 1): ?><nav class="mt-3"><ul class="pagination">

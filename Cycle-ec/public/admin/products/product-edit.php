@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../../src/Database.php';
 require_once __DIR__ . '/../../../src/Product.php';
 require_once __DIR__ . '/../../../src/Category.php';
+require_once __DIR__ . '/../../../src/ShippingRate.php';
 require_once __DIR__ . '/../includes/auth.php';
 $productConditions = require __DIR__ . '/../../../config/product_conditions.php';
 
@@ -22,6 +23,7 @@ try {
     $pdo = Database::getConnection();
     $product = Product::findById($productId);
     $categories = Category::all();
+    $shippingRates = ShippingRate::all();
 } catch (PDOException $exception) {
     http_response_code(500);
     exit('商品情報の取得に失敗しました。');
@@ -43,9 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'description' => trim((string) ($_POST['description'] ?? '')),
         'price' => $_POST['price'] ?? '',
         'tax_rate' => $_POST['tax_rate'] ?? '',
-        'status' => trim((string) ($_POST['status'] ?? '')),
+        'shipping_size' => is_string($_POST['shipping_size'] ?? null) ? trim($_POST['shipping_size']) : '',
+        'status' => is_string($_POST['status'] ?? null) ? trim($_POST['status']) : '',
         'product_condition' => trim((string) ($_POST['product_condition'] ?? '')),
-        'stock_quantity' => $_POST['stock_quantity'] ?? '0',
+        'stock_quantity' => (int) ($product['stock_quantity'] ?? 0),
         'staff_comment' => trim((string) ($_POST['staff_comment'] ?? '')),
         'is_recommended' => isset($_POST['is_recommended']),
     ];
@@ -57,7 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         || $data['name'] === ''
         || !is_numeric($data['price']) || (float) $data['price'] < 0
         || !is_numeric($data['tax_rate']) || (float) $data['tax_rate'] < 0 || (float) $data['tax_rate'] > 100
-        || $data['status'] === ''
+        || !ShippingRate::isActiveSize((string) $data['shipping_size'])
+        || !Product::isValidStatus((string) $data['status'])
         || !array_key_exists($data['product_condition'], $productConditions)
         || !ctype_digit((string) $data['stock_quantity'])
     ) {
@@ -196,12 +200,14 @@ require __DIR__ . '/../includes/header.php';
 <div class="col-md-6 mb-3"><label class="form-label" for="tax_rate">税率</label><input class="form-control" type="number" min="0" max="100" step="0.01" id="tax_rate" name="tax_rate" value="<?= h((string) $product['tax_rate']) ?>" required></div>
 </div>
 
+<div class="mb-3"><label class="form-label" for="shipping_size">配送サイズ</label><select class="form-select" id="shipping_size" name="shipping_size" required><option value="">選択してください</option><?php foreach ($shippingRates as $shippingRate): ?><option value="<?= h((string) $shippingRate['shipping_size']) ?>" <?= (string) ($product['shipping_size'] ?? '') === (string) $shippingRate['shipping_size'] ? 'selected' : '' ?> <?= (int) $shippingRate['is_active'] !== 1 ? 'disabled' : '' ?>><?= h((string) $shippingRate['shipping_size']) ?>（送料 <?= number_format((float) $shippingRate['shipping_fee'], 2) ?>円<?= (int) $shippingRate['is_active'] !== 1 ? '・無効' : '' ?>）</option><?php endforeach; ?></select><?php if (!ShippingRate::isActiveSize((string) ($product['shipping_size'] ?? ''))): ?><div class="form-text text-danger">現在の配送サイズは無効です。有効なサイズへ変更してください。</div><?php endif; ?></div>
+
 <div class="row">
-<div class="col-md-6 mb-3"><label class="form-label" for="status">販売ステータス</label><input class="form-control" id="status" name="status" value="<?= h((string) $product['status']) ?>" required></div>
+<div class="col-md-6 mb-3"><label class="form-label" for="status">販売ステータス</label><select class="form-select" id="status" name="status" required><?php foreach (Product::statusLabels() as $statusValue => $statusLabel): ?><option value="<?= h($statusValue) ?>" <?= (string) $product['status'] === $statusValue ? 'selected' : '' ?>><?= h($statusLabel) ?></option><?php endforeach; ?></select></div>
 <div class="col-md-6 mb-3"><label class="form-label" for="product_condition">商品状態</label><select class="form-select" id="product_condition" name="product_condition" required><option value="">選択してください</option><?php foreach ($productConditions as $conditionValue => $condition): ?><option value="<?= h($conditionValue) ?>" <?= (string) $product['product_condition'] === (string) $conditionValue ? 'selected' : '' ?>><?= h((string) $condition['label']) ?></option><?php endforeach; ?></select></div>
 </div>
 
-<div class="mb-3"><label class="form-label" for="stock_quantity">在庫数</label><input class="form-control" type="number" min="0" step="1" id="stock_quantity" name="stock_quantity" value="<?= h((string) ($product['stock_quantity'] ?? 0)) ?>" required style="max-width:160px"></div>
+<div class="mb-3"><label class="form-label">在庫数</label><div class="form-control-plaintext"><?= number_format((int) ($product['stock_quantity'] ?? 0)) ?> 点</div><div class="form-text">在庫数の変更や仕入原価の登録は<a href="../accounting/purchases.php">仕入管理</a>から行ってください。</div></div>
 
 <div class="mb-3"><label class="form-label" for="specs_raw">スペック</label><textarea class="form-control" id="specs_raw" name="specs_raw" rows="6" placeholder="1行に1項目、「項目名:値」の形式で入力してください"><?= h($specsRaw) ?></textarea><div class="form-text">「項目名:値」の形式で1行ずつ入力してください（保存すると既存のスペックは全て置き換わります）。</div></div>
 
@@ -247,6 +253,6 @@ require __DIR__ . '/../includes/header.php';
     <input type="file" name="condition_images[]" id="condition_images" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
 </div>
 
-<div class="d-flex justify-content-between"><a class="btn btn-outline-secondary" href="index.php">戻る</a><div><a class="btn btn-outline-danger" href="?id=<?= (int) $productId ?>&delete=1" onclick="return confirm('この商品を削除しますか？')">論理削除</a> <button class="btn btn-primary" type="submit">保存</button></div></div>
+<div class="d-flex justify-content-between"><a class="btn btn-outline-secondary" href="index.php">戻る</a><div><a class="btn btn-outline-danger" href="?id=<?= (int) $productId ?>&delete=1" onclick="return confirm('この商品を削除しますか？')">ゴミ箱</a> <button class="btn btn-primary" type="submit">保存</button></div></div>
 </form></div>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

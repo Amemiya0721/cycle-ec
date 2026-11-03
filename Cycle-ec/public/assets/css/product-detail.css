@@ -331,15 +331,17 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: #fff;
+  background: #f7f7f7;
 }
 .pd-related-card .prod-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
   object-position: center;
+  padding: 8px;
+  display: block;
 }
 .pd-related-name {
   font-size: 12px;

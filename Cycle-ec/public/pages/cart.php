@@ -51,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $cartIds = $cartService->ids();
 $items = [];
+$hasUnavailableShipping = false;
 
 foreach ($cartIds as $productId) {
 
@@ -58,7 +59,7 @@ foreach ($cartIds as $productId) {
 
     if (
         $item === null ||
-        ($item['status'] ?? '') !== '販売中' ||
+        ($item['status'] ?? '') !== 'on_sale' ||
         (int) ($item['stock_quantity'] ?? 0) <= 0 ||
         (int) ($item['is_deleted'] ?? 0) === 1
     ) {
@@ -66,6 +67,9 @@ foreach ($cartIds as $productId) {
         continue;
     }
 
+    if ((int) ($item['shipping_rate_active'] ?? 0) !== 1) {
+        $hasUnavailableShipping = true;
+    }
     $items[] = $item;
 }
 
@@ -88,6 +92,9 @@ require_once __DIR__ . '/../includes/nav.php';
     <?php if (!$items): ?>
         <p>カートに商品がありません。</p>
     <?php else: ?>
+        <?php if ($hasUnavailableShipping): ?>
+            <div class="alert alert-warning">送料が無効になっている商品があります。管理者が送料を有効にするまで注文できません。</div>
+        <?php endif; ?>
         <div class="list-group mb-4">
             <?php foreach ($items as $item): ?>
                 <div class="list-group-item d-flex align-items-center gap-3 flex-wrap">
@@ -100,7 +107,8 @@ require_once __DIR__ . '/../includes/nav.php';
                         <?php endif; ?>
                     </div>
                     <span class="flex-grow-1"><?= h((string) $item['name']) ?></span>
-                    <strong><?= number_format((float) $item['price']) ?>円</strong>
+                    <span class="text-muted small"><?= h((string) $item['shipping_size']) ?>サイズ</span>
+                    <strong><?= number_format((float) $item['price'], 2) ?>円</strong>
                     <form method="post" action="cart.php" class="ms-auto">
                         <input type="hidden" name="csrf_token" value="<?= h(Auth::csrfToken()) ?>">
                         <input type="hidden" name="action" value="remove">
@@ -110,7 +118,7 @@ require_once __DIR__ . '/../includes/nav.php';
                 </div>
             <?php endforeach; ?>
         </div>
-        <a href="checkout.php?mode=cart" class="btn btn-primary">
+        <a href="checkout.php?mode=cart" class="btn btn-primary <?= $hasUnavailableShipping ? 'disabled' : '' ?>" <?= $hasUnavailableShipping ? 'aria-disabled="true" tabindex="-1"' : '' ?>>
             注文手続きへ
         </a>
     <?php endif; ?>

@@ -211,12 +211,12 @@ function currentSort(?string $sort): string
 /**
  * 売切れ商品かどうか判定する。
  * Product::buildWhereConditions() の exclude_sold_out と同じ基準：
- *   status が '売切れ' / 'SOLD'、または stock_quantity <= 0
+ *   status が 'sold_out'、または stock_quantity <= 0
  * ※ Product::search() の SELECT に p.stock_quantity が必要。
  */
 function isSold(array $item): bool
 {
-    if (in_array((string) ($item['status'] ?? ''), ['売切れ', 'SOLD'], true)) {
+    if (($item['status'] ?? '') === 'sold_out') {
         return true;
     }
 

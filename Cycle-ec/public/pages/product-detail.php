@@ -54,12 +54,12 @@ function h(?string $value): string
 
 /**
  * 在庫表示文言を返す。
- * status が SOLD/売切れの場合は「売り切れ」を優先する。
+ * status が sold_out の場合は「売り切れ」を優先する。
  */
 function stockLabel(array $product): string
 {
     $status = (string) ($product['status'] ?? '');
-    if (in_array($status, ['売切れ', 'SOLD'], true)) {
+    if ($status === 'sold_out') {
         return '売り切れ';
     }
 
@@ -76,10 +76,32 @@ function stockLabel(array $product): string
 function isSoldOut(array $product): bool
 {
     $status = (string) ($product['status'] ?? '');
-    if (in_array($status, ['売切れ', 'SOLD'], true)) {
+    if ($status === 'sold_out') {
         return true;
     }
     return (int) ($product['stock_quantity'] ?? 0) <= 0;
+}
+
+function isOnSale(array $product): bool
+{
+    return ($product['status'] ?? '') === 'on_sale';
+}
+
+function isShippingUnavailable(array $product): bool
+{
+    return (int) ($product['shipping_rate_active'] ?? 0) !== 1;
+}
+
+function productShippingLabel(array $product): string
+{
+    if (isShippingUnavailable($product)) {
+        return (string) ($product['shipping_size'] ?? '') . '（送料確認中）';
+    }
+
+    return (string) $product['shipping_size']
+        . ' ＋'
+        . number_format((float) $product['shipping_fee'], 2)
+        . '円';
 }
 
 /** Only use original images stored inside this product's local upload directory. */
@@ -261,6 +283,10 @@ require_once __DIR__ . '/../includes/nav.php';
 
                         <?php if (isSoldOut($product)): ?>
                             <p class="status-sold">SOLD OUT</p>
+                        <?php elseif (!isOnSale($product)): ?>
+                            <p class="status-sold">現在購入できません</p>
+                        <?php elseif (isShippingUnavailable($product)): ?>
+                            <p class="status-sold">現在購入できません</p>
                         <?php else: ?>
                             <form method="post" action="<?= h($baseUrl) ?>pages/cart.php" class="pd-actions">
                                 <input type="hidden" name="product_id" value="<?= (int) $product['product_id'] ?>">
@@ -275,7 +301,7 @@ require_once __DIR__ . '/../includes/nav.php';
                         <?php endif; ?>
 
                         <ul class="pd-guarantees list-unstyled">
-                            <li>&#128230; <?= h((string) $shippingWarranty['shipping_fee']) ?></li>
+                            <li>&#128230; サイズ <?= h(productShippingLabel($product)) ?></li>
                             <li>&#9989; 安心の<?= h((string) $shippingWarranty['warranty']) ?></li>
                             <li>&#128257; 返品・交換について</li>
                         </ul>
@@ -386,7 +412,7 @@ require_once __DIR__ . '/../includes/nav.php';
                     <h2 class="pd-panel-title d-lg-none">配送・保証</h2>
                     <dl class="pd-spec-list">
                         <dt>送料</dt>
-                        <dd><?= h((string) $shippingWarranty['shipping_fee']) ?></dd>
+                        <dd>サイズ <?= h(productShippingLabel($product)) ?></dd>
                         <dt>発送</dt>
                         <dd><?= h((string) $shippingWarranty['delivery_days']) ?></dd>
                         <dt>保証</dt>
@@ -401,12 +427,12 @@ require_once __DIR__ . '/../includes/nav.php';
                     <section class="pd-panel" id="pd-panel-related">
                         <h2 class="pd-panel-title d-lg-none">関連商品</h2>
                         <div class="pd-related-scroll">
-                                    <?php foreach ($relatedProducts as $related): ?>
-                                        <?php $relatedImageUrl = Product::publicImageUrl($related['image_url'] ?? null); ?>
+                            <?php foreach ($relatedProducts as $related): ?>
+                                <?php $relatedImageUrl = Product::publicImageUrl($related['image_url'] ?? null); ?>
                                 <a class="pd-related-card" href="product-detail.php?id=<?= (int) $related['product_id'] ?>">
                                     <div class="prod-thumb">
-                                                <?php if ($relatedImageUrl !== null): ?>
-                                                    <img src="<?= h($relatedImageUrl) ?>" alt="<?= h((string) $related['name']) ?>" class="prod-image">
+                                        <?php if ($relatedImageUrl !== null): ?>
+                                            <img src="<?= h($relatedImageUrl) ?>" alt="<?= h((string) $related['name']) ?>" class="prod-image" loading="lazy">
                                         <?php else: ?>
                                             <span class="thumb-icon" aria-hidden="true">&#128690;</span>
                                         <?php endif; ?>

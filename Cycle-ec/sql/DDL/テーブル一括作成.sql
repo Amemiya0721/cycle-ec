@@ -62,7 +62,7 @@ CREATE TABLE user_addresses (
         ON DELETE CASCADE
         ON UPDATE CASCADE,
 
-    INDEX idx_user_addresses_user_id (user_id)
+    UNIQUE KEY uq_user_addresses_user_id (user_id)
 ) ENGINE=InnoDB;
 
 
@@ -88,6 +88,35 @@ CREATE TABLE categories (
 
 
 -- ============================================================
+-- SHIPPING_RATES
+-- 配送サイズ別送料
+-- ============================================================
+
+CREATE TABLE shipping_rates (
+    shipping_rate_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    shipping_size VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+    shipping_fee DECIMAL(10,2) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_shipping_rates_size (shipping_size),
+    UNIQUE KEY uk_shipping_rates_sort_order (sort_order),
+    INDEX idx_shipping_rates_order (sort_order, shipping_rate_id)
+) ENGINE=InnoDB;
+
+INSERT INTO shipping_rates (shipping_size, sort_order, shipping_fee, is_active)
+VALUES
+    ('小', 10, 700.00, TRUE),
+    ('中', 20, 1200.00, TRUE),
+    ('大', 30, 2000.00, TRUE);
+
+
+-- ============================================================
 -- PRODUCTS
 -- 商品情報
 -- ============================================================
@@ -103,8 +132,11 @@ CREATE TABLE products (
     price DECIMAL(10,2) NOT NULL,
     tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00,
 
+    shipping_size VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '大',
     status VARCHAR(50) NOT NULL DEFAULT 'on_sale',
     product_condition VARCHAR(50) NOT NULL DEFAULT 'used',
+    stock_quantity INT UNSIGNED NOT NULL DEFAULT 0,
+    average_cost DECIMAL(10,2) NULL,
 
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     is_recommended BOOLEAN NOT NULL DEFAULT FALSE,
@@ -119,7 +151,14 @@ CREATE TABLE products (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
 
+    CONSTRAINT fk_products_shipping_size
+        FOREIGN KEY (shipping_size)
+        REFERENCES shipping_rates (shipping_size)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_products_category_id (category_id),
+    INDEX idx_products_shipping_size (shipping_size),
     INDEX idx_products_status (status),
     INDEX idx_products_is_deleted (is_deleted)
 ) ENGINE=InnoDB;
@@ -187,9 +226,17 @@ CREATE TABLE orders (
 
     user_id INT UNSIGNED NOT NULL,
 
+    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    shipping_size VARCHAR(100) NULL,
+    shipping_rate_id INT UNSIGNED NULL,
     total_price DECIMAL(10,2) NOT NULL,
 
     status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    payment_method VARCHAR(32) NOT NULL DEFAULT 'bank_transfer',
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid',
+    payment_due_at DATETIME NULL,
+    paid_at DATETIME NULL,
 
     -- 注文時点の配送先を保存
     shipping_postal_code VARCHAR(10) NOT NULL,
@@ -211,8 +258,16 @@ CREATE TABLE orders (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
 
+    CONSTRAINT fk_orders_shipping_rate
+        FOREIGN KEY (shipping_rate_id)
+        REFERENCES shipping_rates (shipping_rate_id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
     INDEX idx_orders_user_id (user_id),
+    INDEX idx_orders_shipping_rate_id (shipping_rate_id),
     INDEX idx_orders_status (status),
+    INDEX idx_orders_payment_status_due_at (payment_status, payment_due_at),
     INDEX idx_orders_ordered_at (ordered_at)
 ) ENGINE=InnoDB;
 
@@ -230,6 +285,7 @@ CREATE TABLE order_items (
 
     -- 注文時点の商品価格を保持
     price DECIMAL(10,2) NOT NULL,
+    cost_price DECIMAL(10,2) NULL,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -247,4 +303,85 @@ CREATE TABLE order_items (
 
     INDEX idx_order_items_order_id (order_id),
     INDEX idx_order_items_product_id (product_id)
+) ENGINE=InnoDB;
+
+
+-- ============================================================
+-- INVENTORY_PURCHASES
+-- 仕入記録と期首在庫原価（仕入登録時に在庫と移動平均原価を更新）
+-- ============================================================
+
+CREATE TABLE inventory_purchases (
+    purchase_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id INT UNSIGNED NOT NULL,
+    record_type ENUM('opening_balance', 'purchase') NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    unit_cost DECIMAL(10,2) NOT NULL,
+    total_cost DECIMAL(20,2) NOT NULL,
+    purchase_date DATE NOT NULL,
+    notes VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_inventory_purchases_product
+        FOREIGN KEY (product_id)
+        REFERENCES products (product_id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    INDEX idx_inventory_purchases_date (purchase_date, purchase_id),
+    INDEX idx_inventory_purchases_product (product_id, purchase_date)
+) ENGINE=InnoDB;
+
+
+-- ============================================================
+-- OPERATING_EXPENSES
+-- 商品仕入とは区別する運営経費
+-- ============================================================
+
+CREATE TABLE operating_expenses (
+    expense_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    expense_date DATE NOT NULL,
+    category VARCHAR(80) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_operating_expenses_date (expense_date, expense_id)
+) ENGINE=InnoDB;
+
+
+-- ============================================================
+-- BANK_TRANSFER_SETTINGS
+-- 管理画面で設定する銀行振込先（購入者にはメールでのみ案内）
+-- ============================================================
+
+CREATE TABLE bank_transfer_settings (
+    settings_id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    bank_name VARCHAR(100) NOT NULL DEFAULT '',
+    branch_name VARCHAR(100) NOT NULL DEFAULT '',
+    account_type VARCHAR(30) NOT NULL DEFAULT '',
+    account_number VARCHAR(50) NOT NULL DEFAULT '',
+    account_holder VARCHAR(100) NOT NULL DEFAULT '',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO bank_transfer_settings (settings_id)
+VALUES (1);
+
+
+-- ============================================================
+-- PASSWORD_RESET_TOKENS
+-- 期限付き・使い捨てのパスワード再設定トークン（ハッシュのみ保存）
+-- ============================================================
+
+CREATE TABLE password_reset_tokens (
+    user_id INT UNSIGNED NOT NULL PRIMARY KEY,
+    token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_password_reset_tokens_user
+        FOREIGN KEY (user_id)
+        REFERENCES users (user_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    UNIQUE KEY uq_password_reset_tokens_hash (token_hash),
+    INDEX idx_password_reset_tokens_expires_at (expires_at)
 ) ENGINE=InnoDB;

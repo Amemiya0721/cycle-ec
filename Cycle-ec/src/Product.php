@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Category.php';
+require_once __DIR__ . '/ShippingRate.php';
 
 /**
  * Product
@@ -34,7 +35,28 @@ require_once __DIR__ . '/Category.php';
  */
 class Product
 {
-    private const AVAILABLE_STATUSES = ['販売中', 'on_sale'];
+    private const STATUS_LABELS = [
+        'on_sale' => '販売中',
+        'sold_out' => '売切れ',
+        'draft' => '下書き',
+    ];
+
+    private const AVAILABLE_STATUSES = ['on_sale'];
+
+    public static function statusLabels(): array
+    {
+        return self::STATUS_LABELS;
+    }
+
+    public static function statusLabel(string $status): string
+    {
+        return self::STATUS_LABELS[$status] ?? $status;
+    }
+
+    public static function isValidStatus(string $status): bool
+    {
+        return array_key_exists($status, self::STATUS_LABELS);
+    }
 
     /** Convert a stored product upload path to a URL under the configured app base URL. */
     public static function publicImageUrl(?string $storedPath): ?string
@@ -118,11 +140,21 @@ class Product
         return in_array($status, self::AVAILABLE_STATUSES, true);
     }
 
-    private static function assertAvailableStatusHasStock(array $data): void
+    private static function assertValidForSave(array $data): void
     {
-        if (self::isAvailableStatus((string) ($data['status'] ?? ''))
+        $status = (string) ($data['status'] ?? '');
+        if (!self::isValidStatus($status)) {
+            throw new InvalidArgumentException('販売ステータスが正しくありません。');
+        }
+
+        if (self::isAvailableStatus($status)
             && (int) ($data['stock_quantity'] ?? 0) <= 0) {
             throw new InvalidArgumentException('販売中の商品には在庫を1点以上設定してください。');
+        }
+
+        $shippingSize = trim((string) ($data['shipping_size'] ?? ''));
+        if ($shippingSize === '' || !ShippingRate::isActiveSize($shippingSize)) {
+            throw new InvalidArgumentException('有効な配送サイズを選択してください。');
         }
     }
 
@@ -205,6 +237,9 @@ class Product
                 p.description,
                 p.price,
                 p.tax_rate,
+                p.shipping_size,
+                sr.shipping_fee AS shipping_fee,
+                sr.is_active AS shipping_rate_active,
                 p.status,
                 p.product_condition,
                 p.stock_quantity,
@@ -216,6 +251,7 @@ class Product
                 c.name AS category_name
              FROM products p
              INNER JOIN categories c ON c.category_id = p.category_id
+             LEFT JOIN shipping_rates sr ON sr.shipping_size = p.shipping_size
              WHERE p.product_id = :product_id
                AND p.is_deleted = 0
              LIMIT 1'
@@ -295,57 +331,62 @@ class Product
  *
  * @return array<int, array<string, mixed>>
  */
-public static function relatedByCategory(
-    int $productId,
-    int $categoryId,
-    int $limit = 8
-): array {
-    $limit = max(1, min($limit, 20));
+    public static function relatedByCategory(
+        int $productId,
+        int $categoryId,
+        int $limit = 8
+    ): array {
+        $limit = max(1, min($limit, 20));
 
-    $pdo = Database::getConnection();
+        $pdo = Database::getConnection();
 
-    $stmt = $pdo->prepare(
-        'SELECT
-            p.product_id,
-            p.name,
-            p.price,
-            c.name AS category_name,
-            pi.image_url
-         FROM products p
-         INNER JOIN categories c
-             ON c.category_id = p.category_id
-         LEFT JOIN product_images pi
-             ON pi.product_id = p.product_id
-             AND pi.image_type = "main"
-             AND pi.sort_order = 1
-         WHERE p.is_deleted = 0
-             AND p.category_id = :category_id
-             AND p.product_id != :product_id
-             AND p.status IN ("販売中", "on_sale")
-             AND p.stock_quantity > 0
-         ORDER BY p.created_at DESC, p.product_id DESC
-         LIMIT :limit'
-    );
+        $stmt = $pdo->prepare(
+            'SELECT
+                p.product_id,
+                p.name,
+                p.price,
+                c.name AS category_name,
+                pi.image_url
+             FROM products p
+             INNER JOIN categories c
+                 ON c.category_id = p.category_id
+             LEFT JOIN product_images pi
+                 ON pi.image_id = (
+                     SELECT candidate.image_id
+                     FROM product_images candidate
+                     WHERE candidate.product_id = p.product_id
+                       AND candidate.image_type = \'main\'
+                     ORDER BY candidate.sort_order ASC, candidate.image_id ASC
+                     LIMIT 1
+                 )
+             WHERE p.is_deleted = 0
+                 AND p.category_id = :category_id
+                 AND p.product_id != :product_id
+                 AND p.status = "on_sale"
+                 AND p.stock_quantity > 0
+             ORDER BY p.created_at DESC, p.product_id DESC
+             LIMIT :limit'
+        );
 
-    $stmt->bindValue(':category_id', $categoryId, PDO::PARAM_INT);
-    $stmt->bindValue(':product_id', $productId, PDO::PARAM_INT);
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':category_id', $categoryId, PDO::PARAM_INT);
+        $stmt->bindValue(':product_id', $productId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 
-    $stmt->execute();
+        $stmt->execute();
 
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     public static function create(array $data): int
     {
-        self::assertAvailableStatusHasStock($data);
+        self::assertValidForSave($data);
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare(
             'INSERT INTO products
-                (category_id, manufacturer, name, description, price, tax_rate, status,
+                (category_id, manufacturer, name, description, price, tax_rate, shipping_size, status,
                  product_condition, stock_quantity, staff_comment, is_deleted, is_recommended)
              VALUES
-                (:category_id, :manufacturer, :name, :description, :price, :tax_rate, :status,
+                (:category_id, :manufacturer, :name, :description, :price, :tax_rate, :shipping_size, :status,
                  :product_condition, :stock_quantity, :staff_comment, 0, :is_recommended)'
         );
         $stmt->execute([
@@ -355,6 +396,7 @@ public static function relatedByCategory(
             ':description' => $data['description'] ?? null,
             ':price' => $data['price'],
             ':tax_rate' => $data['tax_rate'],
+            ':shipping_size' => trim((string) $data['shipping_size']),
             ':status' => $data['status'],
             ':product_condition' => $data['product_condition'],
             ':stock_quantity' => (int) ($data['stock_quantity'] ?? 0),
@@ -367,7 +409,7 @@ public static function relatedByCategory(
 
     public static function update(int $productId, array $data): bool
     {
-        self::assertAvailableStatusHasStock($data);
+        self::assertValidForSave($data);
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare(
             'UPDATE products
@@ -377,9 +419,9 @@ public static function relatedByCategory(
                  description = :description,
                  price = :price,
                  tax_rate = :tax_rate,
+                 shipping_size = :shipping_size,
                  status = :status,
                  product_condition = :product_condition,
-                 stock_quantity = :stock_quantity,
                  staff_comment = :staff_comment,
                  is_recommended = :is_recommended
              WHERE product_id = :product_id
@@ -394,9 +436,9 @@ public static function relatedByCategory(
             ':description' => $data['description'] ?? null,
             ':price' => $data['price'],
             ':tax_rate' => $data['tax_rate'],
+            ':shipping_size' => trim((string) $data['shipping_size']),
             ':status' => $data['status'],
             ':product_condition' => $data['product_condition'],
-            ':stock_quantity' => (int) ($data['stock_quantity'] ?? 0),
             ':staff_comment' => $data['staff_comment'] ?? null,
             ':is_recommended' => !empty($data['is_recommended']) ? 1 : 0,
         ]);
@@ -507,7 +549,7 @@ public static function relatedByCategory(
                              ON pi.product_id = p.product_id AND pi.image_type = "main" AND pi.sort_order = 1
                          WHERE p.is_deleted = 0
                              AND p.is_recommended = 1
-                             AND p.status NOT IN (\'売切れ\', \'SOLD\')
+                             AND p.status = \'on_sale\'
                              AND p.stock_quantity > 0
                          ORDER BY p.updated_at DESC, p.product_id DESC
                          LIMIT :limit'
@@ -537,7 +579,7 @@ public static function relatedByCategory(
                             )
                          WHERE p.is_deleted = 0
                              AND ph.price > p.price
-                             AND p.status NOT IN (\'売切れ\', \'SOLD\')
+                             AND p.status = \'on_sale\'
                              AND p.stock_quantity > 0
                          ORDER BY (ph.price - p.price) DESC, p.updated_at DESC
                          LIMIT :limit'
@@ -572,17 +614,62 @@ public static function relatedByCategory(
         return $stmt->fetchAll();
     }
 
-    public static function allForDiscountManagement(): array
+    public static function allForDiscountManagement(string $keyword = '', int $page = 1): array
     {
-        $stmt = Database::getConnection()->query(
-            'SELECT p.product_id, p.name, p.price, p.status,
+        $pdo = Database::getConnection();
+        $conditions = ['p.is_deleted = 0'];
+        $params = [];
+        $keyword = trim($keyword);
+        if ($keyword !== '') {
+            $escapedKeyword = '%' . strtr($keyword, ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+            $conditions[] = "(p.name LIKE :keyword_name ESCAPE '!'
+                OR p.manufacturer LIKE :keyword_manufacturer ESCAPE '!'
+                OR c.name LIKE :keyword_category ESCAPE '!'
+                OR p.status LIKE :keyword_status ESCAPE '!')";
+            $params = [
+                ':keyword_name' => $escapedKeyword,
+                ':keyword_manufacturer' => $escapedKeyword,
+                ':keyword_category' => $escapedKeyword,
+                ':keyword_status' => $escapedKeyword,
+            ];
+        }
+        $where = implode(' AND ', $conditions);
+        $count = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM products p
+             INNER JOIN categories c ON c.category_id = p.category_id
+             WHERE ' . $where
+        );
+        $count->execute($params);
+        $total = (int) $count->fetchColumn();
+        $perPage = self::DEFAULT_PER_PAGE;
+        $totalPages = max(1, (int) ceil($total / $perPage));
+        $page = min(max(1, $page), $totalPages);
+        $offset = ($page - 1) * $perPage;
+
+        $stmt = $pdo->prepare(
+            'SELECT p.product_id, p.name, p.manufacturer, p.price, p.status,
                     c.name AS category_name
              FROM products p
              INNER JOIN categories c ON c.category_id = p.category_id
-             WHERE p.is_deleted = 0
-             ORDER BY p.updated_at DESC, p.product_id DESC'
+             WHERE ' . $where . '
+             ORDER BY p.updated_at DESC, p.product_id DESC
+             LIMIT :limit OFFSET :offset'
         );
-        return $stmt->fetchAll();
+        foreach ($params as $name => $value) {
+            $stmt->bindValue($name, $value, PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return [
+            'items' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => $totalPages,
+        ];
     }
 
     public static function updatePrice(int $productId, string $newPrice): bool
@@ -669,7 +756,7 @@ public static function relatedByCategory(
     /**
      * 1ページあたりの商品数。
      */
-    private const DEFAULT_PER_PAGE = 12;
+    private const DEFAULT_PER_PAGE = 10;
 
     /**
      * 商品を検索して一覧を取得する。
@@ -778,6 +865,7 @@ public static function relatedByCategory(
         p.description,
         p.price,
         p.tax_rate,
+        p.shipping_size,
         p.status,
         p.product_condition,
         p.is_deleted,
@@ -865,7 +953,7 @@ public static function relatedByCategory(
         ];
 
         if (($criteria['exclude_sold_out'] ?? false) === true) {
-            $conditions[] = "p.status NOT IN ('売切れ', 'SOLD')";
+            $conditions[] = "p.status <> 'sold_out'";
             $conditions[] = 'p.stock_quantity > 0';
         }
 

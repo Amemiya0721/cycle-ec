@@ -32,7 +32,7 @@ if (!is_array($actionMessage)) {
     $actionMessage = null;
 }
 
-// この画面のPOSTはキャンセル専用。発送は ship.php（配送情報の入力・確認・メール通知つき）で行う。
+// 発送は ship.php（配送情報の入力・確認・メール通知つき）で行う。
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $csrfToken = $_POST['csrf_token'] ?? null;
     $csrfValid = is_string($csrfToken)
@@ -49,21 +49,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $orderId = (is_string($orderIdValue) || is_int($orderIdValue))
             ? filter_var($orderIdValue, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
             : false;
-        $targetStatus = $_POST['target_status'] ?? null;
+        $operation = $_POST['operation'] ?? null;
 
-        if ($orderId === false || !is_string($targetStatus)) {
+        if ($orderId === false || !is_string($operation)) {
             $_SESSION['order_status_flash'] = [
                 'type' => 'danger',
                 'text' => '注文IDまたは操作内容が正しくありません。',
             ];
-        } elseif ($targetStatus !== Order::STATUS_CANCELED) {
+        } elseif (!in_array($operation, ['mark_paid', 'cancel'], true)) {
             $_SESSION['order_status_flash'] = [
                 'type' => 'danger',
                 'text' => '許可されていない注文操作です。',
             ];
         } else {
             try {
-                if (Order::transitionStatus((int) $orderId, Order::STATUS_CANCELED)) {
+                $succeeded = $operation === 'mark_paid'
+                    ? Order::markAsPaid((int) $orderId)
+                    : Order::transitionStatus((int) $orderId, Order::STATUS_CANCELED);
+                if ($succeeded && $operation === 'mark_paid') {
+                    $_SESSION['order_status_flash'] = [
+                        'type' => 'success',
+                        'text' => '注文 #' . (int) $orderId . ' の入金を確認済みにしました。',
+                    ];
+                } elseif ($succeeded) {
                     $_SESSION['order_status_flash'] = [
                         'type' => 'success',
                         'text' => '注文 #' . (int) $orderId . ' をキャンセルし、在庫を復元しました。',
@@ -71,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $_SESSION['order_status_flash'] = [
                         'type' => 'danger',
-                        'text' => '注文が見つからないか、既に状態が変更されています。最新の一覧を確認してください。',
+                        'text' => '注文が見つからないか、現在の状態では操作できません。最新の一覧を確認してください。',
                     ];
                 }
             } catch (Throwable $exception) {
@@ -176,22 +184,44 @@ require __DIR__ . '/../includes/header.php';
                         <td><?= h((string) $o['ordered_at']) ?></td>
                         <td><?= h((string) $o['buyer_name']) ?><br><small class="text-muted"><?= h((string) $o['buyer_email']) ?></small></td>
                         <td><?= h((string) $o['shipping_recipient_name']) ?> 様<br><small class="text-muted"><?= h((string) $o['shipping_prefecture'] . $o['shipping_city']) ?></small></td>
-                        <td class="text-end"><?= number_format((float) $o['total_price']) ?>円<br><small class="text-muted"><?= (int) $o['item_count'] ?>点</small></td>
-                        <td><?= h((string) $o['status']) ?></td>
+                        <td class="text-end"><?= number_format((float) $o['total_price'], 2) ?>円<br><small class="text-muted"><?= (int) $o['item_count'] ?>点</small></td>
+                        <td>
+                            <?= h((string) $o['status']) ?><br>
+                            <?php if ($o['payment_status'] === Order::PAYMENT_STATUS_PAID): ?>
+                                <span class="badge text-bg-success">入金済み</span>
+                            <?php elseif ($o['payment_status'] === Order::PAYMENT_STATUS_UNPAID): ?>
+                                <span class="badge text-bg-warning">未入金</span><br>
+                                <small class="<?= strtotime((string) $o['payment_due_at']) < time() ? 'text-danger' : 'text-muted' ?>">期限: <?= h((string) $o['payment_due_at']) ?></small>
+                            <?php else: ?>
+                                <span class="badge text-bg-secondary">入金取消</span>
+                            <?php endif; ?>
+                        </td>
                         <td><a class="btn btn-sm btn-outline-primary" href="order-detail.php?id=<?= (int) $o['order_id'] ?>">詳細</a></td>
                         <td>
-                            <?php if ($o['status'] === Order::STATUS_ORDERED): ?>
-                                <div class="d-flex flex-column flex-sm-row gap-1">
-                                    <a class="btn btn-sm btn-success text-nowrap w-100" href="ship.php?id=<?= (int) $o['order_id'] ?>">発送する</a>
+                            <?php if ($o['status'] === Order::STATUS_ORDERED && $o['payment_status'] === Order::PAYMENT_STATUS_UNPAID): ?>
+                                <div class="d-flex flex-column gap-1">
+                                    <form method="post" class="m-0" onsubmit="return confirm('注文 #<?= h((string) $o['order_number']) ?> の入金を確認済みにします。');">
+                                        <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
+                                        <input type="hidden" name="operation" value="mark_paid">
+                                        <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
+                                        <input type="hidden" name="return_status" value="<?= h($status) ?>">
+                                        <input type="hidden" name="return_keyword" value="<?= h($keyword) ?>">
+                                        <input type="hidden" name="return_page" value="<?= (int) $result['page'] ?>">
+                                        <button class="btn btn-sm btn-success text-nowrap w-100" type="submit">入金確認</button>
+                                    </form>
                                     <form method="post" class="m-0" onsubmit="return confirm('注文 #<?= h((string) $o['order_number']) ?> をキャンセルします。在庫を復元します。よろしいですか？');">
                                         <input type="hidden" name="csrf_token" value="<?= h((string) $_SESSION['order_status_csrf']) ?>">
+                                        <input type="hidden" name="operation" value="cancel">
                                         <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
-                                        <input type="hidden" name="target_status" value="<?= h(Order::STATUS_CANCELED) ?>">
                                         <input type="hidden" name="return_status" value="<?= h($status) ?>">
                                         <input type="hidden" name="return_keyword" value="<?= h($keyword) ?>">
                                         <input type="hidden" name="return_page" value="<?= (int) $result['page'] ?>">
                                         <button class="btn btn-sm btn-outline-danger text-nowrap w-100" type="submit">キャンセルする</button>
                                     </form>
+                                </div>
+                            <?php elseif ($o['status'] === Order::STATUS_ORDERED && $o['payment_status'] === Order::PAYMENT_STATUS_PAID): ?>
+                                <div class="d-flex flex-column flex-sm-row gap-1">
+                                    <a class="btn btn-sm btn-success text-nowrap w-100" href="ship.php?id=<?= (int) $o['order_id'] ?>">発送する</a>
                                 </div>
                             <?php elseif ($o['status'] === Order::STATUS_SHIPPED): ?>
                                 <span class="badge text-bg-success">発送済み</span>

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/ShippingRate.php';
+
 /**
  * OVERHAUL - Cart
  *
@@ -198,6 +200,7 @@ final class Cart
                 product_id,
                 status,
                 stock_quantity,
+                shipping_size,
                 is_deleted
              FROM products
              WHERE product_id = ?'
@@ -218,7 +221,7 @@ final class Cart
             return false;
         }
 
-        if ($product['status'] !== '販売中') {
+        if ($product['status'] !== 'on_sale') {
             $this->lastError =
                 'この商品は現在販売されていません。';
             return false;
@@ -227,6 +230,11 @@ final class Cart
         if ((int) $product['stock_quantity'] <= 0) {
             $this->lastError =
                 'この商品は売り切れです。';
+            return false;
+        }
+
+        if (!ShippingRate::isActiveSize((string) $product['shipping_size'])) {
+            $this->lastError = 'この商品の送料を計算できないため、現在カートに追加できません。';
             return false;
         }
 
@@ -239,9 +247,14 @@ final class Cart
              SELECT ?, product_id
              FROM products
              WHERE product_id = ?
-               AND status = '販売中'
+               AND status = 'on_sale'
                AND stock_quantity > 0
-               AND is_deleted = 0"
+               AND is_deleted = 0
+               AND EXISTS (
+                   SELECT 1 FROM shipping_rates sr
+                   WHERE sr.shipping_size = products.shipping_size
+                     AND sr.is_active = 1
+               )"
         );
 
         $stmt->execute([

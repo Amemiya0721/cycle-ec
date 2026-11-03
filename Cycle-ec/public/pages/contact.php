@@ -6,10 +6,11 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | OVERHAUL - お問い合わせ
 |--------------------------------------------------------------------------
-| 入力 → 確認 → 修正
-| ※メール送信・DB保存は未実装
+| 入力 → 確認 → メール送信
 |--------------------------------------------------------------------------
 */
+
+require_once __DIR__ . '/../../src/ContactMailService.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -21,13 +22,14 @@ if (empty($_SESSION['contact_csrf_token'])) {
 
 $errors = [];
 $confirmed = false;
+$successMessage = $_SESSION['contact_success_message'] ?? null;
+unset($_SESSION['contact_success_message']);
 
 $name = '';
 $email = '';
 $category = '';
 $message = '';
 
-// お問い合わせ種別（）
 $contactCategories = [
     '商品について',
     '注文について',
@@ -74,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = '不正なリクエストです。ページを再読み込みしてください。';
     }
 
-    if (!in_array($action, ['confirm', 'edit'], true)) {
+    if (!in_array($action, ['confirm', 'edit', 'send'], true)) {
         $errors[] = '不正な操作です。';
     }
 
@@ -92,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = '正しいメールアドレスを入力してください。';
     }
 
-    if (!in_array($category, $categories, true)) {
+    if (!in_array($category, $contactCategories, true)) {
         $errors[] = 'お問い合わせ種別を選択してください。';
     }
 
@@ -103,6 +105,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors) && $action === 'confirm') {
+        $confirmed = true;
+    }
+
+    if (empty($errors) && $action === 'send') {
+        $contact = [
+            'name' => $name,
+            'email' => $email,
+            'category' => $category,
+            'message' => $message,
+        ];
+        $submissionHash = hash(
+            'sha256',
+            json_encode($contact, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
+        );
+
+        try {
+            if (($_SESSION['contact_admin_sent_hash'] ?? null) !== $submissionHash) {
+                if (!ContactMailService::sendAdminNotification($contact)) {
+                    $errors[] = 'お問い合わせを店舗へ送信できませんでした。時間をおいて再度お試しください。';
+                } else {
+                    $_SESSION['contact_admin_sent_hash'] = $submissionHash;
+                }
+            }
+
+            if ($errors === [] && !ContactMailService::sendAutoReply($contact)) {
+                $errors[] = 'お問い合わせは店舗へ送信しましたが、自動返信メールを送信できませんでした。再送操作で重複通知を避けて再試行できます。';
+            }
+        } catch (Throwable $exception) {
+            error_log('Contact submission failed: ' . $exception->getMessage());
+            $errors[] = 'メール送信処理に失敗しました。時間をおいて再度お試しください。';
+        }
+
+        if ($errors === []) {
+            unset($_SESSION['contact_admin_sent_hash']);
+            $_SESSION['contact_csrf_token'] = bin2hex(random_bytes(32));
+            $_SESSION['contact_success_message'] = 'お問い合わせを送信しました。受付確認メールをご確認ください。';
+            header('Location: contact.php', true, 303);
+            exit;
+        }
         $confirmed = true;
     }
 }
@@ -143,6 +184,10 @@ require_once __DIR__ . '/../includes/nav.php';
 
     <?php endif; ?>
 
+    <?php if (is_string($successMessage) && $successMessage !== ''): ?>
+        <div class="success-box" role="status"><?= contactEscape($successMessage) ?></div>
+    <?php endif; ?>
+
     <?php if ($confirmed): ?>
 
         <section class="contact-confirm">
@@ -178,7 +223,7 @@ require_once __DIR__ . '/../includes/nav.php';
             </dl>
 
             <p class="confirm-notice">
-                現在は確認機能のみです。お問い合わせ内容は送信・保存されません。
+                送信すると、店舗への通知と受付確認メールをお送りします。
             </p>
 
             <form method="POST" action="">
@@ -216,6 +261,17 @@ require_once __DIR__ . '/../includes/nav.php';
                     入力内容を修正する
                 </button>
 
+            </form>
+
+            <form method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?= contactEscape($_SESSION['contact_csrf_token']) ?>">
+                <input type="hidden" name="name" value="<?= contactEscape($name) ?>">
+                <input type="hidden" name="email" value="<?= contactEscape($email) ?>">
+                <input type="hidden" name="category" value="<?= contactEscape($category) ?>">
+                <input type="hidden" name="message" value="<?= contactEscape($message) ?>">
+                <button type="submit" name="action" value="send" class="submit-button">
+                    お問い合わせを送信する
+                </button>
             </form>
 
         </section>

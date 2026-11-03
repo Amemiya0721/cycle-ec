@@ -50,8 +50,12 @@ final class UserAddress
      */
     public static function normalize(array $input): array
     {
-        $get = static fn (string $key): string =>
-            trim(mb_convert_kana((string) ($input[$key] ?? ''), 's'));
+        $get = static function (string $key) use ($input): string {
+            $value = $input[$key] ?? '';
+            return is_scalar($value)
+                ? trim(mb_convert_kana((string) $value, 's'))
+                : '';
+        };
 
         return [
             'recipient_name' => $get('recipient_name'),

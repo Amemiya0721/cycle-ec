@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/Database.php';
+require_once __DIR__ . '/ShippingRate.php';
 
 /** 注文処理で起こる「利用者に見せてよい」エラー（在庫切れなど） */
 
@@ -42,6 +43,14 @@ final class Order
 
     public const STATUS_CANCELED = 'キャンセル';
 
+    public const PAYMENT_METHOD_BANK_TRANSFER = 'bank_transfer';
+
+    public const PAYMENT_STATUS_UNPAID = 'unpaid';
+
+    public const PAYMENT_STATUS_PAID = 'paid';
+
+    public const PAYMENT_STATUS_CANCELED = 'cancelled';
+
     /** 配送会社（ship.php のプルダウンと入力検証で使う） */
 
     public const CARRIERS = ['ヤマト運輸', '佐川急便', '日本郵便', 'その他'];
@@ -66,7 +75,7 @@ final class Order
 
     {
 
-        return in_array($status, ['売切れ', 'SOLD'], true) || $stockQuantity <= 0;
+        return $status === 'sold_out' || $stockQuantity <= 0;
 
     }
 
@@ -77,16 +86,20 @@ final class Order
      *
 
      * @param int[] $productIds カート内の商品ID（1商品1点）
-
      * @param array\<string, string> $shipping UserAddress::normalize() 済みの送付先
-
+     * @param array<string, mixed> $expectedAmounts 表示時に計算した商品小計・送料
      * @return int order_id
 
      * @throws OrderException 売り切れ等、利用者に伝えるべき失敗
 
      */
 
-    public static function create(int $userId, array $productIds, array $shipping): int
+    public static function create(
+        int $userId,
+        array $productIds,
+        array $shipping,
+        array $expectedAmounts = []
+    ): int
 
     {
 
@@ -132,7 +145,7 @@ final class Order
 
             $stmt = $pdo->prepare(
 
-                "SELECT product_id, name, price, status, stock_quantity
+                "SELECT product_id, name, price, status, stock_quantity, average_cost, shipping_size
 
                  FROM products
 
@@ -155,8 +168,7 @@ final class Order
             }
 
             $unavailable = [];
-
-            $totalCents = 0;
+            $subtotalCents = 0;
 
             foreach ($productIds as $productId) {
 
@@ -168,7 +180,7 @@ final class Order
 
                 }
 
-                if (!in_array((string) $row['status'], ['販売中', 'on_sale'], true)) {
+                if ((string) $row['status'] !== 'on_sale') {
 
                     throw new OrderException((string) $row['name'] . ' は購入できない状態です。');
 
@@ -190,9 +202,9 @@ final class Order
 
                 }
 
-                $totalCents += (int) str_replace('.', '', $price);
+                $subtotalCents += (int) str_replace('.', '', $price);
 
-                if ($totalCents > 9999999999) {
+                if ($subtotalCents > 9999999999) {
 
                     throw new OrderException('注文金額が上限を超えています。');
 
@@ -210,13 +222,46 @@ final class Order
 
             }
 
+            try {
+                $shippingQuote = ShippingRate::quoteForProducts(
+                    $pdo,
+                    array_values($rows),
+                    true
+                );
+            } catch (ShippingRateException $exception) {
+                throw new OrderException($exception->getMessage());
+            }
+
+            $shippingFee = (string) $shippingQuote['shipping_fee'];
+            if (!preg_match('/^\d{1,8}\.\d{2}$/D', $shippingFee)) {
+                throw new OrderException('送料が正しく設定されていないため、注文できません。');
+            }
+            $shippingFeeCents = (int) str_replace('.', '', $shippingFee);
+            $totalCents = $subtotalCents + $shippingFeeCents;
+            if ($totalCents > 9999999999) {
+                throw new OrderException('注文金額が上限を超えています。');
+            }
+            $subtotal = sprintf('%d.%02d', intdiv($subtotalCents, 100), $subtotalCents % 100);
             $total = sprintf('%d.%02d', intdiv($totalCents, 100), $totalCents % 100);
+            if (
+                $expectedAmounts !== []
+                && (
+                    ($expectedAmounts['subtotal'] ?? null) !== $subtotal
+                    || ($expectedAmounts['shipping_rate_id'] ?? null) !== $shippingQuote['shipping_rate_id']
+                    || ($expectedAmounts['shipping_fee'] ?? null) !== $shippingFee
+                    || ($expectedAmounts['shipping_size'] ?? null) !== $shippingQuote['shipping_size']
+                )
+            ) {
+                throw new OrderException('商品価格または送料が更新されたため、ご注文内容を確認してから再度注文してください。');
+            }
 
             $orderStmt = $pdo->prepare(
 
                 'INSERT INTO orders
 
-                    (order_number, user_id, total_price, status,
+                    (order_number, user_id, subtotal, shipping_fee, shipping_size,
+                     shipping_rate_id, total_price, status, payment_method,
+                     payment_status, payment_due_at,
 
                      shipping_postal_code, shipping_prefecture, shipping_city,
 
@@ -228,7 +273,9 @@ final class Order
 
                  VALUES
 
-                    (:order_number, :user_id, :total_price, :status,
+                    (:order_number, :user_id, :subtotal, :shipping_fee, :shipping_size,
+                     :shipping_rate_id, :total_price, :status, :payment_method,
+                     :payment_status, DATE_ADD(NOW(), INTERVAL 3 DAY),
 
                      :postal_code, :prefecture, :city,
 
@@ -249,8 +296,14 @@ final class Order
                     $orderStmt->execute([
                         ':order_number'   => $orderNumber,
                         ':user_id'        => $userId,
+                        ':subtotal'       => $subtotal,
+                        ':shipping_fee'   => $shippingFee,
+                        ':shipping_size'  => $shippingQuote['shipping_size'],
+                        ':shipping_rate_id' => $shippingQuote['shipping_rate_id'],
                         ':total_price'    => $total,
                         ':status'         => self::STATUS_ORDERED,
+                        ':payment_method' => self::PAYMENT_METHOD_BANK_TRANSFER,
+                        ':payment_status' => self::PAYMENT_STATUS_UNPAID,
                         ':postal_code'    => $shipping['postal_code'],
                         ':prefecture'     => $shipping['prefecture'],
                         ':city'           => $shipping['city'],
@@ -278,9 +331,9 @@ final class Order
 
             $itemStmt = $pdo->prepare(
 
-                'INSERT INTO order_items (order_id, product_id, price)
+                'INSERT INTO order_items (order_id, product_id, price, cost_price)
 
-                 VALUES (:order_id, :product_id, :price)'
+                 VALUES (:order_id, :product_id, :price, :cost_price)'
 
             );
 
@@ -292,7 +345,7 @@ final class Order
 
                  SET status = CASE
 
-                         WHEN stock_quantity = 1 THEN 'SOLD'
+                         WHEN stock_quantity = 1 THEN 'sold_out'
 
                          ELSE status
 
@@ -304,7 +357,7 @@ final class Order
 
                    AND stock_quantity >= 1
 
-                   AND status IN ('販売中', 'on_sale')"
+                   AND status = 'on_sale'"
 
             );
 
@@ -317,6 +370,7 @@ final class Order
                     ':product_id' => $productId,
 
                     ':price'      => $rows[$productId]['price'], // 注文時点の価格を保存
+                    ':cost_price' => $rows[$productId]['average_cost'],
 
                 ]);
 
@@ -374,20 +428,20 @@ final class Order
 
             $statusStmt = $pdo->prepare(
 
-                'SELECT status FROM orders WHERE order_id = :order_id FOR UPDATE'
+                'SELECT status, payment_status FROM orders WHERE order_id = :order_id FOR UPDATE'
 
             );
 
             $statusStmt->execute([':order_id' => $orderId]);
 
-            $currentStatus = $statusStmt->fetchColumn();
-
-            if ($currentStatus !== self::STATUS_ORDERED) {
-
+            $currentOrder = $statusStmt->fetch(PDO::FETCH_ASSOC);
+            if (
+                $currentOrder === false
+                || $currentOrder['status'] !== self::STATUS_ORDERED
+                || $currentOrder['payment_status'] !== self::PAYMENT_STATUS_UNPAID
+            ) {
                 $pdo->rollBack();
-
                 return false;
-
             }
 
             if ($targetStatus === self::STATUS_CANCELED) {
@@ -400,19 +454,19 @@ final class Order
 
                 'UPDATE orders
 
-                 SET status = :status, updated_at = NOW()
-
-                 WHERE order_id = :order_id AND status = :current_status'
+                 SET status = :status, payment_status = :payment_status, updated_at = NOW()
+                 WHERE order_id = :order_id AND status = :current_status
+                   AND payment_status = :current_payment_status'
 
             );
 
             $updateStmt->execute([
 
                 ':status' => $targetStatus,
-
+                ':payment_status' => self::PAYMENT_STATUS_CANCELED,
                 ':order_id' => $orderId,
-
                 ':current_status' => self::STATUS_ORDERED,
+                ':current_payment_status' => self::PAYMENT_STATUS_UNPAID,
 
             ]);
 
@@ -438,6 +492,60 @@ final class Order
 
         }
 
+    }
+
+    /** 未入金の注文を管理者が入金済みにする。行ロックで二重処理を防ぐ。 */
+    public static function markAsPaid(int $orderId): bool
+    {
+        if ($orderId < 1) {
+            return false;
+        }
+
+        $pdo = Database::getConnection();
+        try {
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare(
+                'SELECT status, payment_status
+                 FROM orders
+                 WHERE order_id = :order_id
+                 FOR UPDATE'
+            );
+            $stmt->execute([':order_id' => $orderId]);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (
+                $order === false
+                || $order['status'] !== self::STATUS_ORDERED
+                || $order['payment_status'] !== self::PAYMENT_STATUS_UNPAID
+            ) {
+                $pdo->rollBack();
+                return false;
+            }
+
+            $update = $pdo->prepare(
+                'UPDATE orders
+                 SET payment_status = :payment_status, paid_at = NOW(), updated_at = NOW()
+                 WHERE order_id = :order_id
+                   AND status = :status
+                   AND payment_status = :current_payment_status'
+            );
+            $update->execute([
+                ':payment_status' => self::PAYMENT_STATUS_PAID,
+                ':order_id' => $orderId,
+                ':status' => self::STATUS_ORDERED,
+                ':current_payment_status' => self::PAYMENT_STATUS_UNPAID,
+            ]);
+            if ($update->rowCount() !== 1) {
+                throw new RuntimeException('入金状態を更新できませんでした。');
+            }
+
+            $pdo->commit();
+            return true;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     /** 追跡番号を正規化する（全角→半角、空白・ハイフン除去、大文字化）。 */
@@ -510,14 +618,17 @@ final class Order
 
             $pdo->beginTransaction();
 
-            $statusStmt = $pdo->prepare('SELECT status FROM orders WHERE order_id = :order_id FOR UPDATE');
-
+            $statusStmt = $pdo->prepare(
+                'SELECT status, payment_status FROM orders WHERE order_id = :order_id FOR UPDATE'
+            );
             $statusStmt->execute([':order_id' => $orderId]);
-
-            if ($statusStmt->fetchColumn() !== self::STATUS_ORDERED) {
-
+            $order = $statusStmt->fetch(PDO::FETCH_ASSOC);
+            if (
+                $order === false
+                || $order['status'] !== self::STATUS_ORDERED
+                || $order['payment_status'] !== self::PAYMENT_STATUS_PAID
+            ) {
                 $pdo->rollBack();
-
                 return null;
 
             }
@@ -540,7 +651,8 @@ final class Order
 
                      updated_at = NOW()
 
-                 WHERE order_id = :order_id AND status = :current_status'
+                 WHERE order_id = :order_id AND status = :current_status
+                   AND payment_status = :payment_status'
 
             );
 
@@ -557,6 +669,7 @@ final class Order
                 ':order_id'       => $orderId,
 
                 ':current_status' => self::STATUS_ORDERED,
+                ':payment_status' => self::PAYMENT_STATUS_PAID,
 
             ]);
 
@@ -754,8 +867,9 @@ final class Order
 
         $itemsStmt = $pdo->prepare(
 
-            'SELECT product_id, COUNT(*) AS quantity
-
+            'SELECT product_id, COUNT(*) AS quantity,
+                    SUM(cost_price) AS cost_total,
+                    SUM(cost_price IS NULL) AS unknown_cost_count
              FROM order_items
 
              WHERE order_id = :order_id
@@ -768,28 +882,21 @@ final class Order
 
         $itemsStmt->execute([':order_id' => $orderId]);
 
-        // キャンセル時は在庫を戻し、売り切れだった商品を再販売する。
-
-        // 管理者が別の理由で非公開にした商品は状態を変更しない。
-
         $stockStmt = $pdo->prepare(
-
             "UPDATE products
-
-             SET status = CASE
-
-                     WHEN status IN ('SOLD', '売切れ') THEN '販売中'
-
-                     ELSE status
-
+             SET average_cost = CASE
+                     WHEN :unknown_cost_count > 0 AND average_cost IS NULL THEN NULL
+                     WHEN stock_quantity = 0 AND :zero_stock_unknown_count = 0
+                         THEN ROUND(:returned_cost / :returned_quantity, 2)
+                     WHEN average_cost IS NULL THEN NULL
+                     ELSE ROUND((stock_quantity * average_cost + :known_returned_cost
+                         + (:unknown_units * average_cost))
+                         / (stock_quantity + :cost_quantity), 2)
                  END,
-
+                 status = CASE WHEN status = 'sold_out' THEN 'on_sale' ELSE status END,
                  stock_quantity = stock_quantity + :quantity_add
-
              WHERE product_id = :product_id
-
                AND stock_quantity <= :max_stock - :quantity_limit"
-
         );
 
         foreach ($itemsStmt->fetchAll(PDO::FETCH_ASSOC) as $item) {
@@ -805,6 +912,13 @@ final class Order
                 ':max_stock' => 4294967295,
 
                 ':quantity_limit' => $quantity,
+                ':unknown_cost_count' => (int) $item['unknown_cost_count'],
+                ':returned_cost' => $item['cost_total'] ?? '0.00',
+                ':returned_quantity' => $quantity,
+                ':known_returned_cost' => $item['cost_total'] ?? '0.00',
+                ':unknown_units' => (int) $item['unknown_cost_count'],
+                ':zero_stock_unknown_count' => (int) $item['unknown_cost_count'],
+                ':cost_quantity' => $quantity,
 
             ]);
 
@@ -1001,6 +1115,7 @@ final class Order
         $stmt = $pdo->prepare(
 
             "SELECT o.order_id, o.order_number, o.total_price, o.status, o.ordered_at,
+                    o.payment_method, o.payment_status, o.payment_due_at, o.paid_at,
 
                     o.shipping_recipient_name, o.shipping_prefecture, o.shipping_city,
 
